@@ -5,7 +5,7 @@ import { WordFadeIn } from "@/components/ui/word-fade-in";
 
 export function ReportDemo() {
   return (
-    <div className="flex flex-col overflow-hidden mt-12">
+    <div className="flex flex-col overflow-hidden">
       <ContainerScroll
         titleComponent={
           <WordFadeIn 
