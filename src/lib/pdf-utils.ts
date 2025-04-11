@@ -113,7 +113,7 @@ export const generatePDF = async (report: ReportData): Promise<Blob> => {
     });
     
     // Add images on new pages
-    let currentPage = doc.internal.getNumberOfPages();
+    let currentPage = (doc as any)._getInternalProperties().pagesContext.length;
     
     // For each item with images
     for (const item of report.items) {

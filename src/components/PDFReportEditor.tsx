@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { 
   Dialog, 
@@ -21,7 +20,7 @@ import {
   printPDF 
 } from "@/lib/pdf-utils";
 import { 
-  FilePdf, 
+  FileText, 
   Pencil, 
   Save, 
   Printer, 
@@ -50,7 +49,6 @@ export function PDFReportEditor({
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const { toast } = useToast();
 
-  // Generate PDF preview when report data changes or preview tab is selected
   useEffect(() => {
     if (isOpen && activeTab === "preview") {
       updatePDFPreview();
@@ -184,7 +182,7 @@ export function PDFReportEditor({
       <DialogContent className="max-w-4xl h-[80vh] flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <FilePdf className="h-5 w-5" />
+            <FileText className="h-5 w-5" />
             <span>PDF Report Generator</span>
           </DialogTitle>
         </DialogHeader>
@@ -200,7 +198,7 @@ export function PDFReportEditor({
               Edit Report
             </TabsTrigger>
             <TabsTrigger value="preview" className="flex items-center gap-1">
-              <FilePdf className="h-4 w-4" />
+              <FileText className="h-4 w-4" />
               Preview PDF
             </TabsTrigger>
           </TabsList>
@@ -340,7 +338,6 @@ export function PDFReportEditor({
                             </button>
                           </div>
                         ))}
-                        {/* This would need a file upload mechanism here */}
                         <button
                           className="w-16 h-16 flex items-center justify-center border border-dashed rounded-md hover:bg-muted transition-colors"
                           onClick={() => {
@@ -374,7 +371,7 @@ export function PDFReportEditor({
               />
             ) : (
               <div className="text-center">
-                <FilePdf className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
+                <FileText className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
                 <p className="text-muted-foreground">No preview available. Click generate to create a preview.</p>
                 <Button 
                   onClick={updatePDFPreview}

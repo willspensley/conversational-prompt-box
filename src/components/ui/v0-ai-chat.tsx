@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useRef, useCallback } from "react";
@@ -17,7 +16,7 @@ import {
     PlusIcon,
     XIcon,
     CameraIcon,
-    FilePdf,
+    FileText,
 } from "lucide-react";
 import { selectImagesFromDevice, takePhotosFromCamera, fileToDataUrl } from "@/lib/image-upload";
 import { ReportButton } from "@/components/ReportButton";
