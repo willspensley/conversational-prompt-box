@@ -91,12 +91,12 @@ export function VercelV0Chat() {
 
     return (
         <div className="flex flex-col items-center w-full max-w-4xl mx-auto p-4 space-y-8">
-            <h1 className="text-4xl font-bold text-black dark:text-white">
+            <h1 className="text-4xl font-bold">
                 What can I help you ship?
             </h1>
 
             <div className="w-full">
-                <div className="relative bg-neutral-900 rounded-xl border border-neutral-800">
+                <div className="relative bg-neutral-900 dark:bg-neutral-900 rounded-xl border border-neutral-800">
                     <div className="overflow-y-auto">
                         <Textarea
                             ref={textareaRef}
@@ -167,7 +167,7 @@ export function VercelV0Chat() {
                     </div>
                 </div>
 
-                <div className="flex items-center justify-center gap-3 mt-4">
+                <div className="flex items-center justify-center gap-3 mt-4 flex-wrap">
                     <ActionButton
                         icon={<ImageIcon className="w-4 h-4" />}
                         label="Clone a Screenshot"
@@ -203,7 +203,7 @@ function ActionButton({ icon, label }: ActionButtonProps) {
     return (
         <button
             type="button"
-            className="flex items-center gap-2 px-4 py-2 bg-neutral-900 hover:bg-neutral-800 rounded-full border border-neutral-800 text-neutral-400 hover:text-white transition-colors"
+            className="flex items-center gap-2 px-4 py-2 bg-neutral-900 dark:bg-neutral-900 hover:bg-neutral-800 dark:hover:bg-neutral-800 rounded-full border border-neutral-800 text-neutral-400 hover:text-white transition-colors"
         >
             {icon}
             <span className="text-xs">{label}</span>
