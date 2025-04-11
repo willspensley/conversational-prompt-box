@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { 
   Dialog, 
@@ -64,7 +63,6 @@ export function PDFReportEditor({
   }, [activeTab, isOpen]);
 
   useEffect(() => {
-    // Ensure the report has the imageResponsePairs property initialized
     if (!report.property.imageResponsePairs) {
       setReport(prev => ({
         ...prev,
@@ -210,7 +208,6 @@ export function PDFReportEditor({
     });
   };
 
-  // Convert item images to ImageResponsePairs for demo purposes
   const addItemImagesAsPairs = () => {
     if (report.items.length === 0 || !report.items[0].images.length) {
       toast({
@@ -220,7 +217,6 @@ export function PDFReportEditor({
       return;
     }
 
-    // Create image response pairs from the first few item images
     const newPairs: ImageResponsePair[] = [];
     
     for (const item of report.items) {
@@ -231,7 +227,6 @@ export function PDFReportEditor({
           response: item.aiAnalysis || "No AI analysis available for this image."
         });
         
-        // Just add a few for demo purposes
         if (newPairs.length >= 3) break;
       }
     }
@@ -284,9 +279,37 @@ export function PDFReportEditor({
               </TabsTrigger>
             </TabsList>
             
+            <TabsContent 
+              value="preview" 
+              className="flex-1 overflow-hidden flex items-center justify-center bg-muted/30 min-h-[200px]"
+            >
+              {isGenerating ? (
+                <div className="flex flex-col items-center justify-center gap-2">
+                  <div className="w-8 h-8 border-4 border-primary/30 border-t-primary rounded-full animate-spin"></div>
+                  <p className="text-sm text-muted-foreground">Generating PDF preview...</p>
+                </div>
+              ) : pdfPreviewUrl ? (
+                <iframe 
+                  src={pdfPreviewUrl} 
+                  className="w-full h-full border-0"
+                  title="PDF Preview"
+                />
+              ) : (
+                <div className="text-center">
+                  <FileText className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
+                  <p className="text-muted-foreground">No preview available. Click generate to create a preview.</p>
+                  <Button 
+                    onClick={updatePDFPreview}
+                    className="mt-4"
+                  >
+                    Generate Preview
+                  </Button>
+                </div>
+              )}
+            </TabsContent>
+            
             <TabsContent value="edit" className="flex-1 overflow-auto">
               <div className="space-y-6 p-2">
-                {/* Report Information section */}
                 <div className="space-y-2">
                   <h3 className="text-lg font-medium">Report Information</h3>
                   <div className="grid grid-cols-2 gap-4">
@@ -308,7 +331,6 @@ export function PDFReportEditor({
                   </div>
                 </div>
                 
-                {/* Property Information section */}
                 <div className="space-y-4">
                   <h3 className="text-lg font-medium">Property Information</h3>
                   <div className="grid grid-cols-2 gap-4">
@@ -328,14 +350,12 @@ export function PDFReportEditor({
                     </div>
                   </div>
 
-                  {/* Image-Response Pairs Editor */}
                   <div className="mt-6">
                     <ImageResponsePairEditor 
                       pairs={report.property.imageResponsePairs || []}
                       onChange={updateImageResponsePairs}
                     />
                     
-                    {/* Demo button to add sample pairs */}
                     {(report.property.imageResponsePairs || []).length === 0 && (
                       <Button
                         variant="outline"
@@ -349,7 +369,6 @@ export function PDFReportEditor({
                   </div>
                 </div>
                 
-                {/* Report Context section */}
                 <div className="space-y-2">
                   <h3 className="text-lg font-medium">Report Context</h3>
                   <Textarea 
@@ -359,7 +378,6 @@ export function PDFReportEditor({
                   />
                 </div>
                 
-                {/* Inventory Items section */}
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <h3 className="text-lg font-medium">Inventory Items</h3>
@@ -418,7 +436,6 @@ export function PDFReportEditor({
                         />
                       </div>
                       
-                      {/* Enhanced AI Analysis section with editable textarea */}
                       {item.aiAnalysis !== undefined && (
                         <div className="space-y-1">
                           <label className="text-xs font-medium flex items-center gap-1 text-primary">
@@ -434,7 +451,6 @@ export function PDFReportEditor({
                         </div>
                       )}
                       
-                      {/* Enhanced Images section with zoomable images */}
                       <div className="space-y-2">
                         <label className="text-xs font-medium">Images ({item.images.length})</label>
                         <div className="flex flex-wrap gap-2">
@@ -491,72 +507,45 @@ export function PDFReportEditor({
               </div>
             </TabsContent>
             
-            <TabsContent value="preview" className="flex-1 overflow-hidden flex items-center justify-center bg-muted/30">
-              {isGenerating ? (
-                <div className="flex flex-col items-center justify-center gap-2">
-                  <div className="w-8 h-8 border-4 border-primary/30 border-t-primary rounded-full animate-spin"></div>
-                  <p className="text-sm text-muted-foreground">Generating PDF preview...</p>
-                </div>
-              ) : pdfPreviewUrl ? (
-                <iframe 
-                  src={pdfPreviewUrl} 
-                  className="w-full h-full border-0"
-                  title="PDF Preview"
-                />
-              ) : (
-                <div className="text-center">
-                  <FileText className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
-                  <p className="text-muted-foreground">No preview available. Click generate to create a preview.</p>
-                  <Button 
-                    onClick={updatePDFPreview}
-                    className="mt-4"
-                  >
-                    Generate Preview
-                  </Button>
-                </div>
-              )}
-            </TabsContent>
+            <DialogFooter className="flex sm:justify-between">
+              <div className="flex items-center gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={handlePrintPDF}
+                  className="flex items-center gap-1"
+                >
+                  <Printer className="h-4 w-4" /> Print
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={handleDownloadPDF}
+                  className="flex items-center gap-1"
+                >
+                  <Save className="h-4 w-4" /> Save PDF
+                </Button>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button 
+                  variant="secondary" 
+                  onClick={onClose}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  variant="default"
+                  onClick={handleSaveReport}
+                  className="flex items-center gap-1"
+                >
+                  <Save className="h-4 w-4" /> Save Report
+                </Button>
+              </div>
+            </DialogFooter>
           </Tabs>
-          
-          <DialogFooter className="flex sm:justify-between">
-            <div className="flex items-center gap-2">
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={handlePrintPDF}
-                className="flex items-center gap-1"
-              >
-                <Printer className="h-4 w-4" /> Print
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={handleDownloadPDF}
-                className="flex items-center gap-1"
-              >
-                <Save className="h-4 w-4" /> Save PDF
-              </Button>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button 
-                variant="secondary" 
-                onClick={onClose}
-              >
-                Cancel
-              </Button>
-              <Button 
-                variant="default"
-                onClick={handleSaveReport}
-                className="flex items-center gap-1"
-              >
-                <Save className="h-4 w-4" /> Save Report
-              </Button>
-            </div>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Full Screen Image Modal */}
       {enlargedImage && (
         <div 
           className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4"
