@@ -17,8 +17,10 @@ import {
     PlusIcon,
     XIcon,
     CameraIcon,
+    FilePdf,
 } from "lucide-react";
 import { selectImagesFromDevice, takePhotosFromCamera, fileToDataUrl } from "@/lib/image-upload";
+import { ReportButton } from "@/components/ReportButton";
 
 interface UseAutoResizeTextareaProps {
     minHeight: number;
@@ -82,7 +84,12 @@ interface UploadedImage {
     file: File;
 }
 
-export function VercelV0Chat() {
+interface VercelV0ChatProps {
+    onStateChange?: (prompt: string, images: UploadedImage[]) => void;
+    onGenerateReport?: () => void;
+}
+
+export function VercelV0Chat({ onStateChange, onGenerateReport }: VercelV0ChatProps) {
     const [value, setValue] = useState("");
     const [uploadedImages, setUploadedImages] = useState<UploadedImage[]>([]);
     const { toast } = useToast();
@@ -90,6 +97,11 @@ export function VercelV0Chat() {
         minHeight: 60,
         maxHeight: 200,
     });
+
+    // Update parent component when state changes
+    useEffect(() => {
+        onStateChange?.(value, uploadedImages);
+    }, [value, uploadedImages, onStateChange]);
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
         if (e.key === "Enter" && !e.shiftKey) {
@@ -170,10 +182,21 @@ export function VercelV0Chat() {
         setUploadedImages((prev) => prev.filter((img) => img.id !== id));
     };
 
+    const handleGenerateReport = () => {
+        if (!value.trim() && uploadedImages.length === 0) {
+            toast({
+                title: "Empty Content",
+                description: "Please add some text or images before generating a report.",
+                variant: "destructive",
+            });
+            return;
+        }
+        
+        onGenerateReport?.();
+    };
+
     return (
         <div className="flex flex-col items-center w-full max-w-4xl mx-auto p-4 space-y-8">
-            {/* Removed the "What can I help you ship?" heading */}
-            
             <div className="w-full">
                 <div className="relative bg-neutral-900 dark:bg-neutral-900 rounded-xl border border-neutral-800">
                     {uploadedImages.length > 0 && (
@@ -248,6 +271,10 @@ export function VercelV0Chat() {
                                 <CameraIcon className="w-4 h-4" />
                                 Project
                             </button>
+                            <ReportButton 
+                                disabled={!value.trim() && uploadedImages.length === 0}
+                                onGenerateReport={handleGenerateReport}
+                            />
                             <button
                                 type="button"
                                 className={cn(
