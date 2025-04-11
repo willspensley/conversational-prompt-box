@@ -16,7 +16,7 @@ export function ReportContextSection({ prompt, onUpdate }: ReportContextSectionP
         <Textarea 
           id="reportContext"
           value={prompt} 
-          onChange={e => onUpdate(e.target.value)}
+          onChange={(e) => onUpdate(e.target.value)}
           placeholder="Add any additional notes or context for this property report..."
           className="h-20"
         />
