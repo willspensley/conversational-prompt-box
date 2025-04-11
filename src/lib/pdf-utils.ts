@@ -140,7 +140,17 @@ export const generatePDF = async (report: ReportData): Promise<Blob> => {
         try {
           // Add image (left side)
           if (imgUrl) {
-            doc.addImage(imgUrl, "JPEG", 20, 40, 75, 90, undefined, "FAST");
+            try {
+              doc.addImage(imgUrl, "JPEG", 20, 40, 75, 90, undefined, "FAST");
+            } catch (imgErr) {
+              // Try adding as PNG if JPEG fails
+              try {
+                doc.addImage(imgUrl, "PNG", 20, 40, 75, 90, undefined, "FAST");
+              } catch (pngErr) {
+                console.error("Failed to add image to PDF:", pngErr);
+                doc.text("Error displaying image", 20, 70);
+              }
+            }
           }
           
           // Add AI analysis (right side)

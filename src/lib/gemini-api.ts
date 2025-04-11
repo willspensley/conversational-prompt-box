@@ -96,7 +96,7 @@ export async function analyzeImagesWithGemini(
               { text: "Please describe this image briefly." },
               {
                 inline_data: {
-                  mime_type: "image/jpeg",
+                  mime_type: testImage.dataUrl.startsWith('data:image/png') ? "image/png" : "image/jpeg",
                   data: base64Content
                 }
               }
@@ -135,6 +135,12 @@ export async function analyzeImagesWithGemini(
         continue;
       }
       
+      const mimeType = image.dataUrl.startsWith('data:image/png') ? "image/png" : 
+                       image.dataUrl.startsWith('data:image/webp') ? "image/webp" : "image/jpeg";
+      
+      const effectivePrompt = prompt || "Please analyze this image in detail";
+      console.log(`Sending image ${image.id} to Gemini with prompt: "${effectivePrompt.substring(0, 50)}..."`);
+      
       const response = await fetch(`${API_URL}?key=${API_KEY}`, {
         method: 'POST',
         headers: {
@@ -144,10 +150,10 @@ export async function analyzeImagesWithGemini(
           contents: [
             {
               parts: [
-                { text: `${prompt || "Please analyze this image"}\nProvide a detailed but concise assessment of this image for a property inventory report.` },
+                { text: `${effectivePrompt}\nProvide a detailed but concise assessment of this image for a property inventory report.` },
                 {
                   inline_data: {
-                    mime_type: "image/jpeg",
+                    mime_type: mimeType,
                     data: base64Content
                   }
                 }
@@ -193,7 +199,7 @@ export function enhanceReportWithAIAnalysis(
   aiAnalysisResults: { [key: string]: string }
 ): ReportItem[] {
   return reportItems.map(item => {
-    // If this item has AI analysis results, include them in the notes
+    // If this item has AI analysis results, include them
     if (item.id in aiAnalysisResults) {
       return {
         ...item,

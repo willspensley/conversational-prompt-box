@@ -22,7 +22,7 @@ export function useReport() {
       // Show a toast to indicate AI analysis is in progress
       toast({
         title: "AI Analysis",
-        description: "Analyzing images with Gemini AI...",
+        description: `Analyzing ${images.length} images with Gemini AI...`,
       });
 
       console.log("Starting Gemini analysis with prompt:", prompt);
@@ -66,7 +66,7 @@ export function useReport() {
       
       toast({
         title: "Analysis Complete",
-        description: "AI analysis has been added to your report.",
+        description: `AI analysis of ${images.length} image${images.length !== 1 ? 's' : ''} has been added to your report.`,
       });
       
       return finalReport;
