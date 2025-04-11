@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { ReportData, createDefaultReport } from "@/lib/pdf-utils";
 import { analyzeImagesWithGemini, enhanceReportWithAIAnalysis, testGeminiAPI } from "@/lib/gemini-api";
@@ -16,6 +17,7 @@ export function useReport() {
       
       // First create the basic report structure
       const newReport = createDefaultReport(prompt, images);
+      console.log("Created base report structure with", images.length, "images");
       
       // Show a toast to indicate AI analysis is in progress
       toast({
@@ -30,6 +32,14 @@ export function useReport() {
       const apiTest = await testGeminiAPI();
       if (!apiTest.success) {
         throw new Error(`API test failed: ${apiTest.message}`);
+      }
+      
+      // No images? Just create a basic report
+      if (images.length === 0) {
+        console.log("No images to analyze, creating basic report");
+        setCurrentReport(newReport);
+        setShowReportEditor(true);
+        return newReport;
       }
       
       // Get AI analysis for each image

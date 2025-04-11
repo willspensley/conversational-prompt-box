@@ -6,7 +6,7 @@ import { fileToDataUrl } from "./image-upload";
 // Declare global types for jspdf-autotable plugin
 declare module "jspdf" {
   interface jsPDF {
-    autoTable: (options: any) => jsPDF;
+    autoTable: typeof autoTable;
   }
 }
 
@@ -67,101 +67,105 @@ export const createDefaultReport = (
 
 // Generate PDF from report data
 export const generatePDF = async (report: ReportData): Promise<Blob> => {
-  const doc = new jsPDF();
-  
-  // Add jspdf-autotable to document
-  (doc as any).autoTable = autoTable;
-  
-  // Add title
-  doc.setFontSize(20);
-  doc.text(report.title, 105, 15, { align: "center" });
-  
-  // Add date and property info
-  doc.setFontSize(12);
-  doc.text(`Date: ${report.date}`, 20, 30);
-  doc.text(`Property Address: ${report.property.address}`, 20, 40);
-  doc.text(`Property Type: ${report.property.type}`, 20, 50);
-  
-  let yPos = 60;
-  
-  // Add prompt if exists
-  if (report.prompt) {
-    doc.text("Report Context:", 20, yPos);
-    doc.setFontSize(10);
-    const lines = doc.splitTextToSize(report.prompt, 170);
-    doc.text(lines, 20, yPos + 10);
+  try {
+    console.log("Starting PDF generation...");
+    const doc = new jsPDF();
     
-    // Adjust y-position based on text height
-    yPos = yPos + 10 + (lines.length * 5);
-  }
-  
-  // Items table
-  doc.setFontSize(12);
-  doc.text("Inventory Items:", 20, yPos + 10);
-  
-  // Generate table data
-  const tableData = report.items.map(item => [
-    item.description,
-    item.condition,
-    item.notes
-  ]);
-  
-  // Add table
-  doc.autoTable({
-    startY: yPos + 20,
-    head: [["Description", "Condition", "Notes"]],
-    body: tableData,
-    margin: { top: 10 },
-    styles: { overflow: "linebreak" },
-    columnStyles: {
-      0: { cellWidth: 60 },
-      1: { cellWidth: 30 },
-      2: { cellWidth: 80 }
+    // Add title
+    doc.setFontSize(20);
+    doc.text(report.title, 105, 15, { align: "center" });
+    
+    // Add date and property info
+    doc.setFontSize(12);
+    doc.text(`Date: ${report.date}`, 20, 30);
+    doc.text(`Property Address: ${report.property.address}`, 20, 40);
+    doc.text(`Property Type: ${report.property.type}`, 20, 50);
+    
+    let yPos = 60;
+    
+    // Add prompt if exists
+    if (report.prompt) {
+      doc.text("Report Context:", 20, yPos);
+      doc.setFontSize(10);
+      const lines = doc.splitTextToSize(report.prompt, 170);
+      doc.text(lines, 20, yPos + 10);
+      
+      // Adjust y-position based on text height
+      yPos = yPos + 10 + (lines.length * 5);
     }
-  });
-  
-  // Add images and AI analysis on new pages
-  for (let i = 0; i < report.items.length; i++) {
-    const item = report.items[i];
     
-    // Skip items without images
-    if (item.images.length === 0) continue;
+    // Items table
+    doc.setFontSize(12);
+    doc.text("Inventory Items:", 20, yPos + 10);
     
-    // Process each image with its AI analysis
-    for (let imgIndex = 0; imgIndex < item.images.length; imgIndex++) {
-      const imgUrl = item.images[imgIndex];
+    // Generate table data
+    const tableData = report.items.map(item => [
+      item.description,
+      item.condition,
+      item.notes || "-"
+    ]);
+    
+    // Add table with autoTable
+    autoTable(doc, {
+      startY: yPos + 20,
+      head: [["Description", "Condition", "Notes"]],
+      body: tableData,
+      margin: { top: 10 },
+      styles: { overflow: "linebreak" },
+      columnStyles: {
+        0: { cellWidth: 60 },
+        1: { cellWidth: 30 },
+        2: { cellWidth: 80 }
+      }
+    });
+    
+    // Add images and AI analysis on new pages
+    for (let i = 0; i < report.items.length; i++) {
+      const item = report.items[i];
       
-      // Add a new page for each image+analysis pair
-      doc.addPage();
+      // Skip items without images
+      if (item.images.length === 0) continue;
       
-      // Add page header
-      doc.setFontSize(14);
-      doc.text(`${item.description} - Image ${imgIndex + 1}`, 105, 20, { align: "center" });
-      
-      try {
-        // Add image (left side)
-        if (imgUrl) {
-          doc.addImage(imgUrl, "JPEG", 20, 40, 75, 90, undefined, "FAST");
-        }
+      // Process each image with its AI analysis
+      for (let imgIndex = 0; imgIndex < item.images.length; imgIndex++) {
+        const imgUrl = item.images[imgIndex];
         
-        // Add AI analysis (right side)
-        if (item.aiAnalysis) {
-          doc.setFontSize(11);
-          doc.text("AI Analysis:", 105, 40);
+        // Add a new page for each image+analysis pair
+        doc.addPage();
+        
+        // Add page header
+        doc.setFontSize(14);
+        doc.text(`${item.description} - Image ${imgIndex + 1}`, 105, 20, { align: "center" });
+        
+        try {
+          // Add image (left side)
+          if (imgUrl) {
+            doc.addImage(imgUrl, "JPEG", 20, 40, 75, 90, undefined, "FAST");
+          }
           
-          const analysisLines = doc.splitTextToSize(item.aiAnalysis, 80);
-          doc.setFontSize(9);
-          doc.text(analysisLines, 105, 50);
+          // Add AI analysis (right side)
+          if (item.aiAnalysis) {
+            doc.setFontSize(11);
+            doc.text("AI Analysis:", 105, 40);
+            
+            const analysisLines = doc.splitTextToSize(item.aiAnalysis, 80);
+            doc.setFontSize(9);
+            doc.text(analysisLines, 105, 50);
+          }
+        } catch (error) {
+          console.error("Error adding image to PDF:", error);
+          // Add error text instead of failing image
+          doc.text("Error displaying image", 20, 70);
         }
-      } catch (error) {
-        console.error("Error adding image to PDF:", error);
-        // Add error text instead of failing image
-        doc.text("Error displaying image", 20, 70);
       }
     }
+    
+    console.log("PDF generation completed successfully");
+    return doc.output("blob");
+  } catch (error) {
+    console.error("Error in PDF generation:", error);
+    throw new Error(`PDF generation failed: ${error instanceof Error ? error.message : String(error)}`);
   }
-  
-  return doc.output("blob");
 };
 
 // Convert blob to data URL for preview

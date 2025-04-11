@@ -98,10 +98,13 @@ export function VercelV0Chat({ onStateChange, onGenerateReport, isAnalyzing = fa
         maxHeight: 200,
     });
 
-    // Update parent component when state changes
+    // Update parent component when state changes - FIX INFINITE LOOP
     useEffect(() => {
-        onStateChange?.(value, uploadedImages);
-    }, [value, uploadedImages, onStateChange]);
+        // Only call onStateChange if it exists and if we have actual data
+        if (onStateChange) {
+            onStateChange(value, uploadedImages);
+        }
+    }, [value, uploadedImages]); // Removed onStateChange from dependencies
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
         if (e.key === "Enter" && !e.shiftKey) {
