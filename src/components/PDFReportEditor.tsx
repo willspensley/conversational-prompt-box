@@ -50,48 +50,10 @@ export function PDFReportEditor({
   onSave 
 }: PDFReportEditorProps) {
   const [report, setReport] = useState<ReportData>(reportData);
-  const [pdfPreviewUrl, setPdfPreviewUrl] = useState<string>("");
   const [activeTab, setActiveTab] = useState<string>("edit");
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [enlargedImage, setEnlargedImage] = useState<{src: string; alt: string} | null>(null);
   const { toast } = useToast();
-
-  useEffect(() => {
-    if (isOpen && activeTab === "preview") {
-      updatePDFPreview();
-    }
-  }, [activeTab, isOpen]);
-
-  useEffect(() => {
-    if (!report.property.imageResponsePairs) {
-      setReport(prev => ({
-        ...prev,
-        property: {
-          ...prev.property,
-          imageResponsePairs: []
-        }
-      }));
-    }
-  }, [report]);
-
-  const updatePDFPreview = async () => {
-    try {
-      setIsGenerating(true);
-      console.log("Generating PDF preview with data:", report);
-      const pdfBlob = await generatePDF(report);
-      const dataUrl = await blobToDataUrl(pdfBlob);
-      setPdfPreviewUrl(dataUrl);
-    } catch (error) {
-      console.error("Error generating PDF preview:", error);
-      toast({
-        title: "Preview Generation Failed",
-        description: "There was an error generating the PDF preview. Please try again.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsGenerating(false);
-    }
-  };
 
   const handleSaveReport = () => {
     onSave?.(report);
@@ -122,21 +84,17 @@ export function PDFReportEditor({
   };
 
   const handlePrintPDF = async () => {
-    if (pdfPreviewUrl) {
-      printPDF(pdfPreviewUrl);
-    } else {
-      try {
-        const pdfBlob = await generatePDF(report);
-        const dataUrl = await blobToDataUrl(pdfBlob);
-        printPDF(dataUrl);
-      } catch (error) {
-        console.error("Error printing PDF:", error);
-        toast({
-          title: "Print Failed",
-          description: "There was an error printing the PDF. Please try again.",
-          variant: "destructive"
-        });
-      }
+    try {
+      const pdfBlob = await generatePDF(report);
+      const dataUrl = await blobToDataUrl(pdfBlob);
+      printPDF(dataUrl);
+    } catch (error) {
+      console.error("Error printing PDF:", error);
+      toast({
+        title: "Print Failed",
+        description: "There was an error printing the PDF. Please try again.",
+        variant: "destructive"
+      });
     }
   };
 
@@ -263,52 +221,10 @@ export function PDFReportEditor({
             </DialogTitle>
           </DialogHeader>
           
-          <Tabs 
-            value={activeTab} 
-            onValueChange={setActiveTab} 
-            className="flex-1 flex flex-col overflow-hidden"
-          >
-            <TabsList className="grid grid-cols-2">
-              <TabsTrigger value="edit" className="flex items-center gap-1">
-                <Pencil className="h-4 w-4" />
-                Edit Report
-              </TabsTrigger>
-              <TabsTrigger value="preview" className="flex items-center gap-1">
-                <FileText className="h-4 w-4" />
-                Preview PDF
-              </TabsTrigger>
-            </TabsList>
-            
-            <TabsContent 
-              value="preview" 
-              className="flex-1 overflow-hidden flex items-center justify-center bg-muted/30 min-h-[200px]"
-            >
-              {isGenerating ? (
-                <div className="flex flex-col items-center justify-center gap-2">
-                  <div className="w-8 h-8 border-4 border-primary/30 border-t-primary rounded-full animate-spin"></div>
-                  <p className="text-sm text-muted-foreground">Generating PDF preview...</p>
-                </div>
-              ) : pdfPreviewUrl ? (
-                <iframe 
-                  src={pdfPreviewUrl} 
-                  className="w-full h-full border-0"
-                  title="PDF Preview"
-                />
-              ) : (
-                <div className="text-center">
-                  <FileText className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
-                  <p className="text-muted-foreground">No preview available. Click generate to create a preview.</p>
-                  <Button 
-                    onClick={updatePDFPreview}
-                    className="mt-4"
-                  >
-                    Generate Preview
-                  </Button>
-                </div>
-              )}
-            </TabsContent>
-            
-            <TabsContent value="edit" className="flex-1 overflow-auto">
+          <div className="flex-1 flex flex-col overflow-hidden">
+            {/* Removed Tabs and TabsContent, keeping only the edit view */}
+            <div className="flex-1 overflow-auto">
+              {/* Keep existing edit section content */}
               <div className="space-y-6 p-2">
                 <div className="space-y-2">
                   <h3 className="text-lg font-medium">Report Information</h3>
@@ -505,44 +421,44 @@ export function PDFReportEditor({
                   ))}
                 </div>
               </div>
-            </TabsContent>
-            
-            <DialogFooter className="flex sm:justify-between">
-              <div className="flex items-center gap-2">
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={handlePrintPDF}
-                  className="flex items-center gap-1"
-                >
-                  <Printer className="h-4 w-4" /> Print
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={handleDownloadPDF}
-                  className="flex items-center gap-1"
-                >
-                  <Save className="h-4 w-4" /> Save PDF
-                </Button>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button 
-                  variant="secondary" 
-                  onClick={onClose}
-                >
-                  Cancel
-                </Button>
-                <Button 
-                  variant="default"
+            </div>
+          </div>
+          
+          <DialogFooter className="flex sm:justify-between">
+            <div className="flex items-center gap-2">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={handlePrintPDF}
+                className="flex items-center gap-1"
+              >
+                <Printer className="h-4 w-4" /> Print
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={handleDownloadPDF}
+                className="flex items-center gap-1"
+              >
+                <Save className="h-4 w-4" /> Save PDF
+              </Button>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button 
+                variant="secondary" 
+                onClick={onClose}
+              >
+                Cancel
+              </Button>
+              <Button 
+                variant="default"
                   onClick={handleSaveReport}
-                  className="flex items-center gap-1"
-                >
-                  <Save className="h-4 w-4" /> Save Report
-                </Button>
-              </div>
-            </DialogFooter>
-          </Tabs>
+                className="flex items-center gap-1"
+              >
+                <Save className="h-4 w-4" /> Save Report
+              </Button>
+            </div>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
