@@ -15,6 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { 
   ReportData,
   ReportItem,
+  ImageResponsePair,
   generatePDF, 
   blobToDataUrl, 
   savePDF, 
@@ -34,6 +35,7 @@ import {
   X
 } from "lucide-react";
 import { ZoomableImage } from "./ZoomableImage";
+import { ImageResponsePairEditor } from "./ImageResponsePairEditor";
 
 interface PDFReportEditorProps {
   isOpen: boolean;
@@ -60,6 +62,19 @@ export function PDFReportEditor({
       updatePDFPreview();
     }
   }, [activeTab, isOpen]);
+
+  useEffect(() => {
+    // Ensure the report has the imageResponsePairs property initialized
+    if (!report.property.imageResponsePairs) {
+      setReport(prev => ({
+        ...prev,
+        property: {
+          ...prev.property,
+          imageResponsePairs: []
+        }
+      }));
+    }
+  }, [report]);
 
   const updatePDFPreview = async () => {
     try {
@@ -144,6 +159,16 @@ export function PDFReportEditor({
     }));
   };
 
+  const updateImageResponsePairs = (pairs: ImageResponsePair[]) => {
+    setReport(prev => ({
+      ...prev,
+      property: {
+        ...prev.property,
+        imageResponsePairs: pairs
+      }
+    }));
+  };
+
   const updateItem = (index: number, field: string, value: any) => {
     setReport(prev => {
       const updatedItems = [...prev.items];
@@ -183,6 +208,53 @@ export function PDFReportEditor({
         items: updatedItems
       };
     });
+  };
+
+  // Convert item images to ImageResponsePairs for demo purposes
+  const addItemImagesAsPairs = () => {
+    if (report.items.length === 0 || !report.items[0].images.length) {
+      toast({
+        title: "No Images Available",
+        description: "Please add items with images first before generating image-response pairs.",
+      });
+      return;
+    }
+
+    // Create image response pairs from the first few item images
+    const newPairs: ImageResponsePair[] = [];
+    
+    for (const item of report.items) {
+      if (item.images.length && item.aiAnalysis) {
+        newPairs.push({
+          id: `pair-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
+          imageUrl: item.images[0],
+          response: item.aiAnalysis || "No AI analysis available for this image."
+        });
+        
+        // Just add a few for demo purposes
+        if (newPairs.length >= 3) break;
+      }
+    }
+
+    if (newPairs.length > 0) {
+      setReport(prev => ({
+        ...prev,
+        property: {
+          ...prev.property,
+          imageResponsePairs: [...(prev.property.imageResponsePairs || []), ...newPairs]
+        }
+      }));
+      
+      toast({
+        title: "Demo Pairs Added",
+        description: `Added ${newPairs.length} image-response pairs from your item images.`
+      });
+    } else {
+      toast({
+        title: "No Valid Images",
+        description: "Could not find items with both images and AI analysis.",
+      });
+    }
   };
 
   return (
@@ -237,7 +309,7 @@ export function PDFReportEditor({
                 </div>
                 
                 {/* Property Information section */}
-                <div className="space-y-2">
+                <div className="space-y-4">
                   <h3 className="text-lg font-medium">Property Information</h3>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
@@ -254,6 +326,26 @@ export function PDFReportEditor({
                         onChange={e => updatePropertyField("type", e.target.value)}
                       />
                     </div>
+                  </div>
+
+                  {/* Image-Response Pairs Editor */}
+                  <div className="mt-6">
+                    <ImageResponsePairEditor 
+                      pairs={report.property.imageResponsePairs || []}
+                      onChange={updateImageResponsePairs}
+                    />
+                    
+                    {/* Demo button to add sample pairs */}
+                    {(report.property.imageResponsePairs || []).length === 0 && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={addItemImagesAsPairs}
+                        className="mt-2 flex items-center gap-1"
+                      >
+                        <Plus className="h-4 w-4" /> Add Demo Pairs from Item Images
+                      </Button>
+                    )}
                   </div>
                 </div>
                 

@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { ReportData, createDefaultReport } from "@/lib/pdf-utils";
+import { ReportData, createDefaultReport, ImageResponsePair } from "@/lib/pdf-utils";
 import { analyzeImagesWithGemini, enhanceReportWithAIAnalysis, testGeminiAPI } from "@/lib/gemini-api";
 import { useToast } from "@/hooks/use-toast";
 
@@ -17,6 +17,12 @@ export function useReport() {
       
       // First create the basic report structure
       const newReport = createDefaultReport(prompt, images);
+      
+      // Make sure imageResponsePairs is initialized
+      if (!newReport.property.imageResponsePairs) {
+        newReport.property.imageResponsePairs = [];
+      }
+      
       console.log("Created base report structure with", images.length, "images");
       
       // Show a toast to indicate AI analysis is in progress
@@ -55,10 +61,28 @@ export function useReport() {
       const enhancedItems = enhanceReportWithAIAnalysis(newReport.items, aiAnalysisResults);
       console.log("Enhanced report items:", enhancedItems);
       
-      // Update the report with enhanced items
+      // Also create image-response pairs for the property section
+      const imageResponsePairs: ImageResponsePair[] = [];
+      for (const imageId in aiAnalysisResults) {
+        // Find the matching image from original images array
+        const matchingImage = images.find(img => img.id === imageId);
+        if (matchingImage && aiAnalysisResults[imageId]) {
+          imageResponsePairs.push({
+            id: `pair-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
+            imageUrl: matchingImage.dataUrl,
+            response: aiAnalysisResults[imageId]
+          });
+        }
+      }
+      
+      // Update the report with enhanced items and image-response pairs
       const finalReport = {
         ...newReport,
-        items: enhancedItems
+        items: enhancedItems,
+        property: {
+          ...newReport.property,
+          imageResponsePairs
+        }
       };
       
       setCurrentReport(finalReport);
@@ -81,6 +105,10 @@ export function useReport() {
       
       // Fallback to basic report without AI analysis
       const basicReport = createDefaultReport(prompt, images);
+      // Make sure imageResponsePairs is initialized
+      if (!basicReport.property.imageResponsePairs) {
+        basicReport.property.imageResponsePairs = [];
+      }
       setCurrentReport(basicReport);
       setShowReportEditor(true);
       return basicReport;
@@ -90,6 +118,11 @@ export function useReport() {
   };
 
   const saveReport = (report: ReportData) => {
+    // Ensure the report has imageResponsePairs property
+    if (!report.property.imageResponsePairs) {
+      report.property.imageResponsePairs = [];
+    }
+    
     setSavedReports(prev => {
       // Check if report already exists and update it
       const existingIndex = prev.findIndex(r => 

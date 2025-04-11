@@ -10,12 +10,18 @@ declare module "jspdf" {
   }
 }
 
+export interface ImageResponsePair {
+  id: string;
+  imageUrl: string;
+  response: string;
+}
+
 export interface ReportItem {
   id: string;
   description: string;
   condition: "Good" | "Fair" | "Poor";
   notes: string;
-  aiAnalysis?: string; // Added AI analysis field
+  aiAnalysis?: string;
   images: string[];
 }
 
@@ -25,6 +31,7 @@ export interface ReportData {
   property: {
     address: string;
     type: string;
+    imageResponsePairs: ImageResponsePair[];
   };
   prompt: string;
   items: ReportItem[];
@@ -40,7 +47,7 @@ export const createDefaultReport = (
     description: `Item ${index + 1}`,
     condition: "Good",
     notes: "",
-    aiAnalysis: "", // Initialize empty AI analysis
+    aiAnalysis: "",
     images: [img.dataUrl],
   }));
 
@@ -50,6 +57,7 @@ export const createDefaultReport = (
     property: {
       address: "Property Address",
       type: "Residential",
+      imageResponsePairs: [],
     },
     prompt,
     items: defaultItems.length ? defaultItems : [
@@ -82,6 +90,55 @@ export const generatePDF = async (report: ReportData): Promise<Blob> => {
     doc.text(`Property Type: ${report.property.type}`, 20, 50);
     
     let yPos = 60;
+    
+    // Add property image-response pairs if they exist
+    if (report.property.imageResponsePairs && report.property.imageResponsePairs.length > 0) {
+      doc.text("Property Analysis:", 20, yPos);
+      
+      for (let i = 0; i < report.property.imageResponsePairs.length; i++) {
+        const pair = report.property.imageResponsePairs[i];
+        
+        // Add a new page for each image-response pair
+        doc.addPage();
+        
+        // Add page header
+        doc.setFontSize(14);
+        doc.text(`Property Analysis - Image ${i + 1}`, 105, 20, { align: "center" });
+        
+        try {
+          // Add image (left side)
+          if (pair.imageUrl) {
+            try {
+              doc.addImage(pair.imageUrl, "JPEG", 20, 40, 75, 90, undefined, "FAST");
+            } catch (imgErr) {
+              // Try adding as PNG if JPEG fails
+              try {
+                doc.addImage(pair.imageUrl, "PNG", 20, 40, 75, 90, undefined, "FAST");
+              } catch (pngErr) {
+                console.error("Failed to add image to PDF:", pngErr);
+                doc.text("Error displaying image", 20, 70);
+              }
+            }
+          }
+          
+          // Add response (right side)
+          if (pair.response) {
+            doc.setFontSize(11);
+            doc.text("Analysis:", 105, 40);
+            
+            const responseLines = doc.splitTextToSize(pair.response, 80);
+            doc.setFontSize(9);
+            doc.text(responseLines, 105, 50);
+          }
+        } catch (error) {
+          console.error("Error adding image-response to PDF:", error);
+          doc.text("Error displaying image-response pair", 20, 70);
+        }
+      }
+      
+      // Adjust y-position
+      yPos = yPos + 10;
+    }
     
     // Add prompt if exists
     if (report.prompt) {
@@ -119,7 +176,7 @@ export const generatePDF = async (report: ReportData): Promise<Blob> => {
       }
     });
     
-    // Add images and AI analysis on new pages
+    // Add individual item images and AI analysis on new pages
     for (let i = 0; i < report.items.length; i++) {
       const item = report.items[i];
       
