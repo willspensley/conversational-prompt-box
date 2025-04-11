@@ -1,3 +1,4 @@
+
 import { ReportItem } from "./pdf-utils";
 
 interface GeminiAnalysisResponse {
@@ -12,7 +13,7 @@ interface GeminiAnalysisResponse {
 
 export async function analyzeImagesWithGemini(
   prompt: string,
-  images: { id: string; dataUrl: string }[]
+  images: { id: string; dataUrl: string; file?: File }[]
 ): Promise<{ [key: string]: string }> {
   const API_KEY = "AIzaSyCRCDRe-VegAXICAZEf8EaLNeneaHr9V3w";
   const API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro-vision:generateContent";
@@ -22,6 +23,8 @@ export async function analyzeImagesWithGemini(
   // Process each image individually to get specific analysis
   for (const image of images) {
     try {
+      console.log("Processing image:", image.id);
+      
       // Convert dataUrl to base64 content required by Gemini
       const base64Content = image.dataUrl.split(',')[1];
       
@@ -58,11 +61,14 @@ export async function analyzeImagesWithGemini(
       }
       
       const data: GeminiAnalysisResponse = await response.json();
+      console.log("Gemini API response:", data);
+      
       const analysisText = data.candidates[0]?.content?.parts[0]?.text || 
                           "Analysis not available";
       
       // Store the result with the image ID as key
       results[image.id] = analysisText;
+      console.log("Added analysis for image:", image.id);
       
     } catch (error) {
       console.error("Error analyzing image with Gemini:", error);
@@ -70,6 +76,7 @@ export async function analyzeImagesWithGemini(
     }
   }
   
+  console.log("All results:", results);
   return results;
 }
 

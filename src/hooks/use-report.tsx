@@ -11,7 +11,7 @@ export function useReport() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const { toast } = useToast();
 
-  const generateReport = async (prompt: string, images: { id: string; dataUrl: string }[]) => {
+  const generateReport = async (prompt: string, images: { id: string; dataUrl: string; file?: File }[]) => {
     try {
       setIsAnalyzing(true);
       
@@ -24,11 +24,16 @@ export function useReport() {
         description: "Analyzing images with Gemini AI...",
       });
 
+      console.log("Starting Gemini analysis with prompt:", prompt);
+      console.log("Images for analysis:", images.map(img => img.id));
+      
       // Get AI analysis for each image
       const aiAnalysisResults = await analyzeImagesWithGemini(prompt, images);
+      console.log("AI Analysis completed, results:", aiAnalysisResults);
       
       // Enhance the report with AI analysis
       const enhancedItems = enhanceReportWithAIAnalysis(newReport.items, aiAnalysisResults);
+      console.log("Enhanced report items:", enhancedItems);
       
       // Update the report with enhanced items
       const finalReport = {

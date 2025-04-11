@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { 
   Dialog, 
@@ -60,6 +59,7 @@ export function PDFReportEditor({
   const updatePDFPreview = async () => {
     try {
       setIsGenerating(true);
+      console.log("Generating PDF preview with data:", report);
       const pdfBlob = await generatePDF(report);
       const dataUrl = await blobToDataUrl(pdfBlob);
       setPdfPreviewUrl(dataUrl);
@@ -319,14 +319,14 @@ export function PDFReportEditor({
                       />
                     </div>
                     
-                    {/* AI Analysis section */}
+                    {/* AI Analysis section - enhanced with better styling */}
                     {item.aiAnalysis && (
                       <div className="space-y-1">
-                        <label className="text-xs font-medium flex items-center gap-1">
+                        <label className="text-xs font-medium flex items-center gap-1 text-primary">
                           <MessageSquare className="h-3 w-3" />
                           AI Analysis
                         </label>
-                        <div className="bg-muted/30 p-3 rounded-md text-sm max-h-40 overflow-y-auto">
+                        <div className="bg-muted/30 p-3 rounded-md text-sm max-h-40 overflow-y-auto border border-primary/20">
                           {item.aiAnalysis}
                         </div>
                       </div>
@@ -336,7 +336,7 @@ export function PDFReportEditor({
                       <label className="text-xs font-medium">Images ({item.images.length})</label>
                       <div className="flex flex-wrap gap-2">
                         {item.images.map((img, imgIndex) => (
-                          <div key={imgIndex} className="relative group w-16 h-16 rounded-md overflow-hidden">
+                          <div key={imgIndex} className="relative group w-16 h-16 rounded-md overflow-hidden border">
                             <img 
                               src={img} 
                               alt={`Item ${index + 1} image ${imgIndex + 1}`} 

@@ -19,6 +19,14 @@ export function ReportButton({
   const handleClick = () => {
     try {
       onGenerateReport();
+      
+      // Show generating toast immediately
+      if (!isAnalyzing) {
+        toast({
+          title: "Generating Report",
+          description: "Creating your report with AI analysis...",
+        });
+      }
     } catch (error) {
       console.error("Error generating report:", error);
       toast({
