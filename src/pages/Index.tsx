@@ -5,8 +5,8 @@ import { ReportDemo } from "@/components/ReportDemo";
 
 const Index = () => {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-start bg-gray-50 pt-8">
-      <div className="w-full max-w-md px-4 flex flex-col items-center gap-4">
+    <div className="min-h-screen flex flex-col items-center justify-start bg-gray-50 pt-10">
+      <div className="w-full max-w-md px-4 flex flex-col items-center gap-6">
         <WordFadeIn 
           words="Perfect Report Creation..." 
           delay={0.3}
