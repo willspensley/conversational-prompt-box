@@ -1,14 +1,19 @@
 
 import { Button } from "@/components/ui/button";
-import { FileText } from "lucide-react";
+import { FileText, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface ReportButtonProps {
   disabled?: boolean;
   onGenerateReport: () => void;
+  isAnalyzing?: boolean;
 }
 
-export function ReportButton({ disabled = false, onGenerateReport }: ReportButtonProps) {
+export function ReportButton({ 
+  disabled = false, 
+  onGenerateReport,
+  isAnalyzing = false
+}: ReportButtonProps) {
   const { toast } = useToast();
 
   const handleClick = () => {
@@ -28,12 +33,16 @@ export function ReportButton({ disabled = false, onGenerateReport }: ReportButto
     <Button
       type="button"
       onClick={handleClick}
-      disabled={disabled}
+      disabled={disabled || isAnalyzing}
       className="px-3 py-1.5 rounded-lg text-sm transition-colors border border-dashed border-zinc-700 hover:border-zinc-600 hover:bg-zinc-800 flex items-center justify-between gap-1"
       variant="ghost"
     >
-      <FileText className="w-4 h-4" />
-      Generate Report
+      {isAnalyzing ? (
+        <Loader2 className="w-4 h-4 animate-spin" />
+      ) : (
+        <FileText className="w-4 h-4" />
+      )}
+      {isAnalyzing ? "Analyzing..." : "Generate Report"}
     </Button>
   );
 }

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { 
   Dialog, 
@@ -27,7 +28,8 @@ import {
   Plus, 
   Trash2, 
   ArrowRight, 
-  ImagePlus
+  ImagePlus,
+  MessageSquare
 } from "lucide-react";
 
 interface PDFReportEditorProps {
@@ -205,6 +207,7 @@ export function PDFReportEditor({
           
           <TabsContent value="edit" className="flex-1 overflow-auto">
             <div className="space-y-6 p-2">
+              {/* Report Information section */}
               <div className="space-y-2">
                 <h3 className="text-lg font-medium">Report Information</h3>
                 <div className="grid grid-cols-2 gap-4">
@@ -226,6 +229,7 @@ export function PDFReportEditor({
                 </div>
               </div>
               
+              {/* Property Information section */}
               <div className="space-y-2">
                 <h3 className="text-lg font-medium">Property Information</h3>
                 <div className="grid grid-cols-2 gap-4">
@@ -246,6 +250,7 @@ export function PDFReportEditor({
                 </div>
               </div>
               
+              {/* Report Context section */}
               <div className="space-y-2">
                 <h3 className="text-lg font-medium">Report Context</h3>
                 <Textarea 
@@ -255,6 +260,7 @@ export function PDFReportEditor({
                 />
               </div>
               
+              {/* Inventory Items section */}
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-medium">Inventory Items</h3>
@@ -312,6 +318,19 @@ export function PDFReportEditor({
                         className="h-16"
                       />
                     </div>
+                    
+                    {/* AI Analysis section */}
+                    {item.aiAnalysis && (
+                      <div className="space-y-1">
+                        <label className="text-xs font-medium flex items-center gap-1">
+                          <MessageSquare className="h-3 w-3" />
+                          AI Analysis
+                        </label>
+                        <div className="bg-muted/30 p-3 rounded-md text-sm max-h-40 overflow-y-auto">
+                          {item.aiAnalysis}
+                        </div>
+                      </div>
+                    )}
                     
                     <div className="space-y-2">
                       <label className="text-xs font-medium">Images ({item.images.length})</label>

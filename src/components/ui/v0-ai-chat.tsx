@@ -86,9 +86,10 @@ interface UploadedImage {
 interface VercelV0ChatProps {
     onStateChange?: (prompt: string, images: UploadedImage[]) => void;
     onGenerateReport?: () => void;
+    isAnalyzing?: boolean;
 }
 
-export function VercelV0Chat({ onStateChange, onGenerateReport }: VercelV0ChatProps) {
+export function VercelV0Chat({ onStateChange, onGenerateReport, isAnalyzing = false }: VercelV0ChatProps) {
     const [value, setValue] = useState("");
     const [uploadedImages, setUploadedImages] = useState<UploadedImage[]>([]);
     const { toast } = useToast();
@@ -273,6 +274,7 @@ export function VercelV0Chat({ onStateChange, onGenerateReport }: VercelV0ChatPr
                             <ReportButton 
                                 disabled={!value.trim() && uploadedImages.length === 0}
                                 onGenerateReport={handleGenerateReport}
+                                isAnalyzing={isAnalyzing}
                             />
                             <button
                                 type="button"

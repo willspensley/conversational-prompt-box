@@ -12,7 +12,8 @@ const Index = () => {
     generateReport,
     saveReport,
     showReportEditor,
-    setShowReportEditor
+    setShowReportEditor,
+    isAnalyzing
   } = useReport();
   
   // State to store the latest prompt and images from the chat
@@ -27,12 +28,12 @@ const Index = () => {
   };
 
   // Handler for generating a report from the current chat state
-  const handleGenerateReport = () => {
+  const handleGenerateReport = async () => {
     if (!chatState.prompt && chatState.images.length === 0) {
       return; // Nothing to generate
     }
     
-    generateReport(chatState.prompt, chatState.images);
+    await generateReport(chatState.prompt, chatState.images);
   };
 
   return (
@@ -48,6 +49,7 @@ const Index = () => {
           <VercelV0Chat 
             onStateChange={handleChatUpdate}
             onGenerateReport={handleGenerateReport}
+            isAnalyzing={isAnalyzing}
           />
         </div>
       </div>

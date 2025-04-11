@@ -15,6 +15,7 @@ export interface ReportItem {
   description: string;
   condition: "Good" | "Fair" | "Poor";
   notes: string;
+  aiAnalysis?: string; // Added AI analysis field
   images: string[];
 }
 
@@ -39,6 +40,7 @@ export const createDefaultReport = (
     description: `Item ${index + 1}`,
     condition: "Good",
     notes: "",
+    aiAnalysis: "", // Initialize empty AI analysis
     images: [img.dataUrl],
   }));
 
@@ -56,6 +58,7 @@ export const createDefaultReport = (
         description: "New Item",
         condition: "Good",
         notes: "",
+        aiAnalysis: "",
         images: [],
       },
     ],
@@ -112,7 +115,7 @@ export const generatePDF = async (report: ReportData): Promise<Blob> => {
       }
     });
     
-    // Add images on new pages
+    // Add images and AI analysis on new pages
     let currentPage = (doc as any)._getInternalProperties().pagesContext.length;
     
     // For each item with images
@@ -123,38 +126,35 @@ export const generatePDF = async (report: ReportData): Promise<Blob> => {
         
         doc.setPage(currentPage);
         doc.setFontSize(14);
-        doc.text(`Images for: ${item.description}`, 105, 20, { align: "center" });
+        doc.text(`Images and Analysis for: ${item.description}`, 105, 20, { align: "center" });
         
-        // Add images in a 2x2 grid
-        let imgX = 20;
-        let imgY = 40;
-        let imgCount = 0;
-        
-        for (const imgUrl of item.images) {
+        // Process each image individually with its AI analysis
+        for (const [imgIndex, imgUrl] of item.images.entries()) {
           try {
-            // Calculate position
-            if (imgCount > 0 && imgCount % 2 === 0) {
-              imgY += 110; // Move to next row
-              imgX = 20;   // Reset X position
-            } else if (imgCount % 2 === 1) {
-              imgX = 110;  // Move to right column
-            }
-            
-            // Add image if URL exists
-            if (imgUrl) {
-              doc.addImage(imgUrl, "JPEG", imgX, imgY, 80, 100, undefined, "FAST");
-            }
-            
-            imgCount++;
-            
-            // Add new page if we've placed 4 images
-            if (imgCount > 0 && imgCount % 4 === 0 && imgCount < item.images.length) {
+            // Add a new page for each image+analysis pair after the first one
+            if (imgIndex > 0) {
               doc.addPage();
               currentPage++;
               doc.setPage(currentPage);
-              imgX = 20;
-              imgY = 40;
+              doc.setFontSize(14);
+              doc.text(`Image ${imgIndex + 1} for: ${item.description}`, 105, 20, { align: "center" });
             }
+            
+            // Add image on the left side
+            if (imgUrl) {
+              doc.addImage(imgUrl, "JPEG", 20, 40, 80, 100, undefined, "FAST");
+            }
+            
+            // Add AI analysis on the right side if available
+            if (item.aiAnalysis) {
+              doc.setFontSize(11);
+              doc.text("AI Analysis:", 110, 40);
+              
+              const analysisLines = doc.splitTextToSize(item.aiAnalysis, 80);
+              doc.setFontSize(9);
+              doc.text(analysisLines, 110, 50);
+            }
+            
           } catch (error) {
             console.error("Error adding image to PDF:", error);
           }
