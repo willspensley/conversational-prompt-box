@@ -1,6 +1,7 @@
 
 import { PromptInputWithActions } from "@/components/PromptInputDemo";
 import { WordFadeIn } from "@/components/ui/word-fade-in";
+import { ReportDemo } from "@/components/ReportDemo";
 
 const Index = () => {
   return (
@@ -16,6 +17,8 @@ const Index = () => {
           <PromptInputWithActions />
         </div>
       </div>
+      
+      <ReportDemo />
     </div>
   );
 };
