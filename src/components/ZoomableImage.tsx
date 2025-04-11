@@ -1,6 +1,6 @@
 
 import { useState, useRef, useEffect } from "react";
-import { ZoomIn, ZoomOut, ZoomReset } from "lucide-react";
+import { ZoomIn, ZoomOut, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface ZoomableImageProps {
@@ -142,7 +142,7 @@ export function ZoomableImage({ src, alt, className = "" }: ZoomableImageProps) 
           onClick={resetZoom}
           title="Reset Zoom"
         >
-          <ZoomReset className="h-3.5 w-3.5" />
+          <RotateCcw className="h-3.5 w-3.5" />
         </Button>
       </div>
     </div>
