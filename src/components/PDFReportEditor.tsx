@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { 
   Dialog, 
   DialogContent, 
@@ -7,6 +7,7 @@ import {
   DialogTitle,
   DialogFooter
 } from "@/components/ui/dialog";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { 
   ReportData,
@@ -16,7 +17,7 @@ import {
   savePDF, 
   printPDF 
 } from "@/lib/pdf-utils";
-import { FileText } from "lucide-react";
+import { FileText, Edit, Eye } from "lucide-react";
 import { ImageViewerModal } from "./report/ImageViewerModal";
 import { ReportInfoSection } from "./report/ReportInfoSection";
 import { PropertyInfoSection } from "./report/PropertyInfoSection";
@@ -39,7 +40,33 @@ export function PDFReportEditor({
 }: PDFReportEditorProps) {
   const [report, setReport] = useState<ReportData>(reportData);
   const [enlargedImage, setEnlargedImage] = useState<{src: string; alt: string} | null>(null);
+  const [pdfPreviewUrl, setPdfPreviewUrl] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<string>("edit");
   const { toast } = useToast();
+
+  // Generate PDF preview when switching to preview tab
+  useEffect(() => {
+    if (activeTab === "preview") {
+      handleGeneratePreview();
+    }
+  }, [activeTab]);
+
+  const handleGeneratePreview = async () => {
+    try {
+      const pdfBlob = await generatePDF(report);
+      const dataUrl = await blobToDataUrl(pdfBlob);
+      setPdfPreviewUrl(dataUrl);
+    } catch (error) {
+      console.error("Error generating PDF preview:", error);
+      toast({
+        title: "Preview Failed",
+        description: "There was an error generating the PDF preview. Please try again.",
+        variant: "destructive"
+      });
+      // Switch back to edit tab on error
+      setActiveTab("edit");
+    }
+  };
 
   const handleSaveReport = () => {
     onSave?.(report);
@@ -208,37 +235,68 @@ export function PDFReportEditor({
           </DialogHeader>
           
           <div className="flex-1 flex flex-col overflow-hidden">
-            <div className="flex-1 overflow-auto">
-              <div className="space-y-6 p-2">
-                <ReportInfoSection
-                  title={report.title}
-                  date={report.date}
-                  onUpdate={updateReportField}
-                />
-                
-                <PropertyInfoSection
-                  address={report.property.address}
-                  type={report.property.type}
-                  imageResponsePairs={report.property.imageResponsePairs || []}
-                  onUpdateField={updatePropertyField}
-                  onUpdatePairs={updateImageResponsePairs}
-                  onAddDemoPairs={addItemImagesAsPairs}
-                />
-                
-                <ReportContextSection
-                  prompt={report.prompt}
-                  onUpdate={(value) => updateReportField("prompt", value)}
-                />
-                
-                <InventoryItemsSection
-                  items={report.items}
-                  onUpdateItem={updateItem}
-                  onAddItem={addNewItem}
-                  onRemoveItem={removeItem}
-                  onEnlargeImage={(src, alt) => setEnlargedImage({ src, alt })}
-                />
-              </div>
-            </div>
+            <Tabs 
+              value={activeTab} 
+              onValueChange={setActiveTab}
+              className="flex flex-col flex-1 overflow-hidden"
+            >
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="edit" className="flex items-center gap-2">
+                  <Edit className="h-4 w-4" />
+                  Edit
+                </TabsTrigger>
+                <TabsTrigger value="preview" className="flex items-center gap-2">
+                  <Eye className="h-4 w-4" />
+                  Preview
+                </TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="edit" className="flex-1 overflow-auto">
+                <div className="space-y-6 p-2">
+                  <ReportInfoSection
+                    title={report.title}
+                    date={report.date}
+                    onUpdate={updateReportField}
+                  />
+                  
+                  <PropertyInfoSection
+                    address={report.property.address}
+                    type={report.property.type}
+                    imageResponsePairs={report.property.imageResponsePairs || []}
+                    onUpdateField={updatePropertyField}
+                    onUpdatePairs={updateImageResponsePairs}
+                    onAddDemoPairs={addItemImagesAsPairs}
+                  />
+                  
+                  <ReportContextSection
+                    prompt={report.prompt}
+                    onUpdate={(value) => updateReportField("prompt", value)}
+                  />
+                  
+                  <InventoryItemsSection
+                    items={report.items}
+                    onUpdateItem={updateItem}
+                    onAddItem={addNewItem}
+                    onRemoveItem={removeItem}
+                    onEnlargeImage={(src, alt) => setEnlargedImage({ src, alt })}
+                  />
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="preview" className="flex-1 overflow-hidden p-2 bg-muted/20">
+                {pdfPreviewUrl ? (
+                  <iframe 
+                    src={pdfPreviewUrl}
+                    className="w-full h-full border border-border rounded-md"
+                    title="PDF Preview"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <p className="text-muted-foreground">Loading preview...</p>
+                  </div>
+                )}
+              </TabsContent>
+            </Tabs>
           </div>
           
           <DialogFooter>

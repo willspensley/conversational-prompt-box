@@ -1,5 +1,6 @@
 
 import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 
 interface ReportContextSectionProps {
   prompt: string;
@@ -10,11 +11,16 @@ export function ReportContextSection({ prompt, onUpdate }: ReportContextSectionP
   return (
     <div className="space-y-2">
       <h3 className="text-lg font-medium">Report Context</h3>
-      <Textarea 
-        value={prompt} 
-        onChange={e => onUpdate(e.target.value)}
-        className="h-20"
-      />
+      <div className="space-y-1">
+        <Label htmlFor="reportContext">Enter additional context for your report</Label>
+        <Textarea 
+          id="reportContext"
+          value={prompt} 
+          onChange={e => onUpdate(e.target.value)}
+          placeholder="Add any additional notes or context for this property report..."
+          className="h-20"
+        />
+      </div>
     </div>
   );
 }
