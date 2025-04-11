@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { 
   Dialog, 
@@ -28,8 +29,11 @@ import {
   Trash2, 
   ArrowRight, 
   ImagePlus,
-  MessageSquare
+  MessageSquare,
+  Maximize,
+  X
 } from "lucide-react";
+import { ZoomableImage } from "./ZoomableImage";
 
 interface PDFReportEditorProps {
   isOpen: boolean;
@@ -48,6 +52,7 @@ export function PDFReportEditor({
   const [pdfPreviewUrl, setPdfPreviewUrl] = useState<string>("");
   const [activeTab, setActiveTab] = useState<string>("edit");
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
+  const [enlargedImage, setEnlargedImage] = useState<{src: string; alt: string} | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -163,6 +168,7 @@ export function PDFReportEditor({
           description: `New Item ${prev.items.length + 1}`,
           condition: "Good" as const,
           notes: "",
+          aiAnalysis: "",
           images: []
         }
       ]
@@ -180,265 +186,307 @@ export function PDFReportEditor({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
-      <DialogContent className="max-w-4xl h-[80vh] flex flex-col">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <FileText className="h-5 w-5" />
-            <span>PDF Report Generator</span>
-          </DialogTitle>
-        </DialogHeader>
-        
-        <Tabs 
-          value={activeTab} 
-          onValueChange={setActiveTab} 
-          className="flex-1 flex flex-col overflow-hidden"
-        >
-          <TabsList className="grid grid-cols-2">
-            <TabsTrigger value="edit" className="flex items-center gap-1">
-              <Pencil className="h-4 w-4" />
-              Edit Report
-            </TabsTrigger>
-            <TabsTrigger value="preview" className="flex items-center gap-1">
-              <FileText className="h-4 w-4" />
-              Preview PDF
-            </TabsTrigger>
-          </TabsList>
+    <>
+      <Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
+        <DialogContent className="max-w-4xl h-[80vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5" />
+              <span>PDF Report Generator</span>
+            </DialogTitle>
+          </DialogHeader>
           
-          <TabsContent value="edit" className="flex-1 overflow-auto">
-            <div className="space-y-6 p-2">
-              {/* Report Information section */}
-              <div className="space-y-2">
-                <h3 className="text-lg font-medium">Report Information</h3>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Report Title</label>
-                    <Input 
-                      value={report.title} 
-                      onChange={e => updateReportField("title", e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Report Date</label>
-                    <Input 
-                      type="date" 
-                      value={report.date} 
-                      onChange={e => updateReportField("date", e.target.value)}
-                    />
-                  </div>
-                </div>
-              </div>
-              
-              {/* Property Information section */}
-              <div className="space-y-2">
-                <h3 className="text-lg font-medium">Property Information</h3>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Property Address</label>
-                    <Input 
-                      value={report.property.address} 
-                      onChange={e => updatePropertyField("address", e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Property Type</label>
-                    <Input 
-                      value={report.property.type} 
-                      onChange={e => updatePropertyField("type", e.target.value)}
-                    />
-                  </div>
-                </div>
-              </div>
-              
-              {/* Report Context section */}
-              <div className="space-y-2">
-                <h3 className="text-lg font-medium">Report Context</h3>
-                <Textarea 
-                  value={report.prompt} 
-                  onChange={e => updateReportField("prompt", e.target.value)}
-                  className="h-20"
-                />
-              </div>
-              
-              {/* Inventory Items section */}
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-medium">Inventory Items</h3>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={addNewItem}
-                    className="flex items-center gap-1"
-                  >
-                    <Plus className="h-4 w-4" /> Add Item
-                  </Button>
-                </div>
-                
-                {report.items.map((item, index) => (
-                  <div key={item.id} className="border rounded-lg p-4 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <h4 className="font-medium">Item {index + 1}</h4>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        onClick={() => removeItem(index)}
-                        className="h-8 w-8 p-0 text-destructive"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-1">
-                        <label className="text-xs font-medium">Description</label>
-                        <Input 
-                          value={item.description} 
-                          onChange={e => updateItem(index, "description", e.target.value)}
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <label className="text-xs font-medium">Condition</label>
-                        <select
-                          className="w-full px-3 py-2 border rounded-md text-sm"
-                          value={item.condition}
-                          onChange={e => updateItem(index, "condition", e.target.value as "Good" | "Fair" | "Poor")}
-                        >
-                          <option value="Good">Good</option>
-                          <option value="Fair">Fair</option>
-                          <option value="Poor">Poor</option>
-                        </select>
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-1">
-                      <label className="text-xs font-medium">Notes</label>
-                      <Textarea 
-                        value={item.notes} 
-                        onChange={e => updateItem(index, "notes", e.target.value)}
-                        className="h-16"
+          <Tabs 
+            value={activeTab} 
+            onValueChange={setActiveTab} 
+            className="flex-1 flex flex-col overflow-hidden"
+          >
+            <TabsList className="grid grid-cols-2">
+              <TabsTrigger value="edit" className="flex items-center gap-1">
+                <Pencil className="h-4 w-4" />
+                Edit Report
+              </TabsTrigger>
+              <TabsTrigger value="preview" className="flex items-center gap-1">
+                <FileText className="h-4 w-4" />
+                Preview PDF
+              </TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="edit" className="flex-1 overflow-auto">
+              <div className="space-y-6 p-2">
+                {/* Report Information section */}
+                <div className="space-y-2">
+                  <h3 className="text-lg font-medium">Report Information</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Report Title</label>
+                      <Input 
+                        value={report.title} 
+                        onChange={e => updateReportField("title", e.target.value)}
                       />
                     </div>
-                    
-                    {/* AI Analysis section - enhanced with better styling */}
-                    {item.aiAnalysis && (
-                      <div className="space-y-1">
-                        <label className="text-xs font-medium flex items-center gap-1 text-primary">
-                          <MessageSquare className="h-3 w-3" />
-                          AI Analysis
-                        </label>
-                        <div className="bg-muted/30 p-3 rounded-md text-sm max-h-40 overflow-y-auto border border-primary/20">
-                          {item.aiAnalysis}
-                        </div>
-                      </div>
-                    )}
-                    
                     <div className="space-y-2">
-                      <label className="text-xs font-medium">Images ({item.images.length})</label>
-                      <div className="flex flex-wrap gap-2">
-                        {item.images.map((img, imgIndex) => (
-                          <div key={imgIndex} className="relative group w-16 h-16 rounded-md overflow-hidden border">
-                            <img 
-                              src={img} 
-                              alt={`Item ${index + 1} image ${imgIndex + 1}`} 
-                              className="w-full h-full object-cover"
-                            />
-                            <button
-                              type="button"
-                              onClick={() => {
-                                updateItem(
-                                  index, 
-                                  "images", 
-                                  item.images.filter((_, i) => i !== imgIndex)
-                                );
-                              }}
-                              className="absolute top-1 right-1 bg-black bg-opacity-60 p-1 rounded-full hidden group-hover:block"
-                            >
-                              <Trash2 className="w-3 h-3 text-white" />
-                            </button>
-                          </div>
-                        ))}
-                        <button
-                          className="w-16 h-16 flex items-center justify-center border border-dashed rounded-md hover:bg-muted transition-colors"
-                          onClick={() => {
-                            toast({
-                              title: "Image Upload",
-                              description: "This functionality would be added in a future update.",
-                            });
-                          }}
-                        >
-                          <ImagePlus className="w-5 h-5 text-muted-foreground" />
-                        </button>
-                      </div>
+                      <label className="text-sm font-medium">Report Date</label>
+                      <Input 
+                        type="date" 
+                        value={report.date} 
+                        onChange={e => updateReportField("date", e.target.value)}
+                      />
                     </div>
                   </div>
-                ))}
+                </div>
+                
+                {/* Property Information section */}
+                <div className="space-y-2">
+                  <h3 className="text-lg font-medium">Property Information</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Property Address</label>
+                      <Input 
+                        value={report.property.address} 
+                        onChange={e => updatePropertyField("address", e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Property Type</label>
+                      <Input 
+                        value={report.property.type} 
+                        onChange={e => updatePropertyField("type", e.target.value)}
+                      />
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Report Context section */}
+                <div className="space-y-2">
+                  <h3 className="text-lg font-medium">Report Context</h3>
+                  <Textarea 
+                    value={report.prompt} 
+                    onChange={e => updateReportField("prompt", e.target.value)}
+                    className="h-20"
+                  />
+                </div>
+                
+                {/* Inventory Items section */}
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-medium">Inventory Items</h3>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={addNewItem}
+                      className="flex items-center gap-1"
+                    >
+                      <Plus className="h-4 w-4" /> Add Item
+                    </Button>
+                  </div>
+                  
+                  {report.items.map((item, index) => (
+                    <div key={item.id} className="border rounded-lg p-4 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <h4 className="font-medium">Item {index + 1}</h4>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={() => removeItem(index)}
+                          className="h-8 w-8 p-0 text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <label className="text-xs font-medium">Description</label>
+                          <Input 
+                            value={item.description} 
+                            onChange={e => updateItem(index, "description", e.target.value)}
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-xs font-medium">Condition</label>
+                          <select
+                            className="w-full px-3 py-2 border rounded-md text-sm"
+                            value={item.condition}
+                            onChange={e => updateItem(index, "condition", e.target.value as "Good" | "Fair" | "Poor")}
+                          >
+                            <option value="Good">Good</option>
+                            <option value="Fair">Fair</option>
+                            <option value="Poor">Poor</option>
+                          </select>
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-1">
+                        <label className="text-xs font-medium">Notes</label>
+                        <Textarea 
+                          value={item.notes} 
+                          onChange={e => updateItem(index, "notes", e.target.value)}
+                          className="h-16"
+                        />
+                      </div>
+                      
+                      {/* Enhanced AI Analysis section with editable textarea */}
+                      {item.aiAnalysis !== undefined && (
+                        <div className="space-y-1">
+                          <label className="text-xs font-medium flex items-center gap-1 text-primary">
+                            <MessageSquare className="h-3 w-3" />
+                            AI Analysis (editable)
+                          </label>
+                          <Textarea
+                            value={item.aiAnalysis || ""}
+                            onChange={e => updateItem(index, "aiAnalysis", e.target.value)}
+                            className="min-h-24 text-sm border border-primary/20"
+                            placeholder="AI analysis will appear here after processing images"
+                          />
+                        </div>
+                      )}
+                      
+                      {/* Enhanced Images section with zoomable images */}
+                      <div className="space-y-2">
+                        <label className="text-xs font-medium">Images ({item.images.length})</label>
+                        <div className="flex flex-wrap gap-2">
+                          {item.images.map((img, imgIndex) => (
+                            <div key={imgIndex} className="relative group">
+                              <div className="w-20 h-20 rounded-md overflow-hidden border">
+                                <ZoomableImage 
+                                  src={img} 
+                                  alt={`Item ${index + 1} image ${imgIndex + 1}`}
+                                  className="w-full h-full"
+                                />
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  updateItem(
+                                    index, 
+                                    "images", 
+                                    item.images.filter((_, i) => i !== imgIndex)
+                                  );
+                                }}
+                                className="absolute top-1 right-1 bg-black bg-opacity-60 p-1 rounded-full hidden group-hover:block"
+                              >
+                                <Trash2 className="w-3 h-3 text-white" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setEnlargedImage({
+                                  src: img,
+                                  alt: `Item ${index + 1} image ${imgIndex + 1}`
+                                })}
+                                className="absolute bottom-1 right-1 bg-black bg-opacity-60 p-1 rounded-full hidden group-hover:block"
+                              >
+                                <Maximize className="w-3 h-3 text-white" />
+                              </button>
+                            </div>
+                          ))}
+                          <button
+                            className="w-20 h-20 flex items-center justify-center border border-dashed rounded-md hover:bg-muted transition-colors"
+                            onClick={() => {
+                              toast({
+                                title: "Image Upload",
+                                description: "This functionality would be added in a future update.",
+                              });
+                            }}
+                          >
+                            <ImagePlus className="w-5 h-5 text-muted-foreground" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
-          </TabsContent>
+            </TabsContent>
+            
+            <TabsContent value="preview" className="flex-1 overflow-hidden flex items-center justify-center bg-muted/30">
+              {isGenerating ? (
+                <div className="flex flex-col items-center justify-center gap-2">
+                  <div className="w-8 h-8 border-4 border-primary/30 border-t-primary rounded-full animate-spin"></div>
+                  <p className="text-sm text-muted-foreground">Generating PDF preview...</p>
+                </div>
+              ) : pdfPreviewUrl ? (
+                <iframe 
+                  src={pdfPreviewUrl} 
+                  className="w-full h-full border-0"
+                  title="PDF Preview"
+                />
+              ) : (
+                <div className="text-center">
+                  <FileText className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
+                  <p className="text-muted-foreground">No preview available. Click generate to create a preview.</p>
+                  <Button 
+                    onClick={updatePDFPreview}
+                    className="mt-4"
+                  >
+                    Generate Preview
+                  </Button>
+                </div>
+              )}
+            </TabsContent>
+          </Tabs>
           
-          <TabsContent value="preview" className="flex-1 overflow-hidden flex items-center justify-center bg-muted/30">
-            {isGenerating ? (
-              <div className="flex flex-col items-center justify-center gap-2">
-                <div className="w-8 h-8 border-4 border-primary/30 border-t-primary rounded-full animate-spin"></div>
-                <p className="text-sm text-muted-foreground">Generating PDF preview...</p>
-              </div>
-            ) : pdfPreviewUrl ? (
-              <iframe 
-                src={pdfPreviewUrl} 
-                className="w-full h-full border-0"
-                title="PDF Preview"
-              />
-            ) : (
-              <div className="text-center">
-                <FileText className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
-                <p className="text-muted-foreground">No preview available. Click generate to create a preview.</p>
-                <Button 
-                  onClick={updatePDFPreview}
-                  className="mt-4"
-                >
-                  Generate Preview
-                </Button>
-              </div>
-            )}
-          </TabsContent>
-        </Tabs>
-        
-        <DialogFooter className="flex sm:justify-between">
-          <div className="flex items-center gap-2">
+          <DialogFooter className="flex sm:justify-between">
+            <div className="flex items-center gap-2">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={handlePrintPDF}
+                className="flex items-center gap-1"
+              >
+                <Printer className="h-4 w-4" /> Print
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={handleDownloadPDF}
+                className="flex items-center gap-1"
+              >
+                <Save className="h-4 w-4" /> Save PDF
+              </Button>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button 
+                variant="secondary" 
+                onClick={onClose}
+              >
+                Cancel
+              </Button>
+              <Button 
+                variant="default"
+                onClick={handleSaveReport}
+                className="flex items-center gap-1"
+              >
+                <Save className="h-4 w-4" /> Save Report
+              </Button>
+            </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Full Screen Image Modal */}
+      {enlargedImage && (
+        <div 
+          className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4"
+          onClick={() => setEnlargedImage(null)}
+        >
+          <div className="relative max-w-4xl max-h-[90vh] w-full h-full">
             <Button 
-              variant="outline" 
-              size="sm"
-              onClick={handlePrintPDF}
-              className="flex items-center gap-1"
+              variant="ghost" 
+              size="icon" 
+              className="absolute top-2 right-2 z-10 bg-black/50 text-white hover:bg-black/70"
+              onClick={() => setEnlargedImage(null)}
             >
-              <Printer className="h-4 w-4" /> Print
+              <X className="h-5 w-5" />
             </Button>
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={handleDownloadPDF}
-              className="flex items-center gap-1"
-            >
-              <Save className="h-4 w-4" /> Save PDF
-            </Button>
+            <ZoomableImage 
+              src={enlargedImage.src} 
+              alt={enlargedImage.alt}
+              className="w-full h-full rounded-lg overflow-hidden"
+            />
           </div>
-          <div className="flex items-center gap-2">
-            <Button 
-              variant="secondary" 
-              onClick={onClose}
-            >
-              Cancel
-            </Button>
-            <Button 
-              variant="default"
-              onClick={handleSaveReport}
-              className="flex items-center gap-1"
-            >
-              <Save className="h-4 w-4" /> Save Report
-            </Button>
-          </div>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </div>
+      )}
+    </>
   );
 }
