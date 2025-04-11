@@ -11,6 +11,51 @@ interface GeminiAnalysisResponse {
   }>;
 }
 
+export async function testGeminiAPI(): Promise<{ success: boolean; message: string }> {
+  const API_KEY = "AIzaSyCRCDRe-VegAXICAZEf8EaLNeneaHr9V3w";
+  const API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent";
+  
+  try {
+    // Simple test with text-only prompt
+    const response = await fetch(`${API_URL}?key=${API_KEY}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        contents: [
+          {
+            parts: [
+              { text: "Hello, this is a test message. Please respond with 'API is working'." }
+            ]
+          }
+        ]
+      })
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("Gemini API test failed:", errorText);
+      return { 
+        success: false, 
+        message: `API Error: ${response.status} - ${errorText.substring(0, 100)}...` 
+      };
+    }
+    
+    const data = await response.json();
+    return { 
+      success: true, 
+      message: "Gemini API is working correctly!" 
+    };
+  } catch (error) {
+    console.error("Gemini API connection error:", error);
+    return { 
+      success: false, 
+      message: `Connection error: ${error instanceof Error ? error.message : String(error)}` 
+    };
+  }
+}
+
 export async function analyzeImagesWithGemini(
   prompt: string,
   images: { id: string; dataUrl: string; file?: File }[]
@@ -57,7 +102,7 @@ export async function analyzeImagesWithGemini(
       if (!response.ok) {
         const errorText = await response.text();
         console.error("Gemini API error:", errorText);
-        throw new Error(`Gemini API error: ${response.status}`);
+        throw new Error(`Gemini API error: ${response.status} - ${errorText.substring(0, 100)}`);
       }
       
       const data: GeminiAnalysisResponse = await response.json();
@@ -72,7 +117,7 @@ export async function analyzeImagesWithGemini(
       
     } catch (error) {
       console.error("Error analyzing image with Gemini:", error);
-      results[image.id] = "Error analyzing this image. Please try again later.";
+      results[image.id] = `Error analyzing this image: ${error instanceof Error ? error.message : "Unknown error"}`;
     }
   }
   

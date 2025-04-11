@@ -1,7 +1,6 @@
-
 import { useState } from "react";
 import { ReportData, createDefaultReport } from "@/lib/pdf-utils";
-import { analyzeImagesWithGemini, enhanceReportWithAIAnalysis } from "@/lib/gemini-api";
+import { analyzeImagesWithGemini, enhanceReportWithAIAnalysis, testGeminiAPI } from "@/lib/gemini-api";
 import { useToast } from "@/hooks/use-toast";
 
 export function useReport() {
@@ -27,21 +26,20 @@ export function useReport() {
       console.log("Starting Gemini analysis with prompt:", prompt);
       console.log("Images for analysis:", images.map(img => img.id));
       
-      // Test with one image if there are any
-      if (images.length > 0) {
-        console.log("Testing API with first image");
-        const testImage = images[0];
-        const testResult = await analyzeImagesWithGemini(prompt, [testImage]);
-        console.log("Test result:", testResult);
-        
-        if (Object.keys(testResult).length === 0) {
-          throw new Error("API test failed - no results returned");
-        }
+      // First test the API connectivity
+      const apiTest = await testGeminiAPI();
+      if (!apiTest.success) {
+        throw new Error(`API test failed: ${apiTest.message}`);
       }
       
       // Get AI analysis for each image
       const aiAnalysisResults = await analyzeImagesWithGemini(prompt, images);
       console.log("AI Analysis completed, results:", aiAnalysisResults);
+      
+      // Check if we got any results
+      if (Object.keys(aiAnalysisResults).length === 0 && images.length > 0) {
+        throw new Error("No analysis results returned from API");
+      }
       
       // Enhance the report with AI analysis
       const enhancedItems = enhanceReportWithAIAnalysis(newReport.items, aiAnalysisResults);
@@ -67,7 +65,7 @@ export function useReport() {
       
       toast({
         title: "AI Analysis Failed",
-        description: "Could not complete AI analysis. Creating basic report instead.",
+        description: `Could not complete AI analysis: ${error instanceof Error ? error.message : 'Unknown error'}`,
         variant: "destructive"
       });
       

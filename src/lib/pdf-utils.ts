@@ -1,5 +1,6 @@
+
 import { jsPDF } from "jspdf";
-import "jspdf-autotable";
+import autoTable from "jspdf-autotable";
 import { fileToDataUrl } from "./image-upload";
 
 // Declare global types for jspdf-autotable plugin
@@ -67,6 +68,9 @@ export const createDefaultReport = (
 // Generate PDF from report data
 export const generatePDF = async (report: ReportData): Promise<Blob> => {
   const doc = new jsPDF();
+  
+  // Add jspdf-autotable to document
+  (doc as any).autoTable = autoTable;
   
   // Add title
   doc.setFontSize(20);
