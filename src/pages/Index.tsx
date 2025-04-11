@@ -1,5 +1,5 @@
 
-import { PromptInputWithActions } from "@/components/PromptInputDemo";
+import { VercelV0Chat } from "@/components/ui/v0-ai-chat";
 import { WordFadeIn } from "@/components/ui/word-fade-in";
 import { ReportDemo } from "@/components/ReportDemo";
 
@@ -14,7 +14,7 @@ const Index = () => {
         />
         
         <div className="w-full flex justify-center">
-          <PromptInputWithActions />
+          <VercelV0Chat />
         </div>
       </div>
       
