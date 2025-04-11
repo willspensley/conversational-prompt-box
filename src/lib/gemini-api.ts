@@ -16,7 +16,7 @@ export async function analyzeImagesWithGemini(
   images: { id: string; dataUrl: string; file?: File }[]
 ): Promise<{ [key: string]: string }> {
   const API_KEY = "AIzaSyCRCDRe-VegAXICAZEf8EaLNeneaHr9V3w";
-  const API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro-vision:generateContent";
+  const API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent";
   
   const results: { [key: string]: string } = {};
   

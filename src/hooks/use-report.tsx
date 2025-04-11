@@ -27,6 +27,18 @@ export function useReport() {
       console.log("Starting Gemini analysis with prompt:", prompt);
       console.log("Images for analysis:", images.map(img => img.id));
       
+      // Test with one image if there are any
+      if (images.length > 0) {
+        console.log("Testing API with first image");
+        const testImage = images[0];
+        const testResult = await analyzeImagesWithGemini(prompt, [testImage]);
+        console.log("Test result:", testResult);
+        
+        if (Object.keys(testResult).length === 0) {
+          throw new Error("API test failed - no results returned");
+        }
+      }
+      
       // Get AI analysis for each image
       const aiAnalysisResults = await analyzeImagesWithGemini(prompt, images);
       console.log("AI Analysis completed, results:", aiAnalysisResults);
