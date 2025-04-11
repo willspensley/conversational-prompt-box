@@ -5,6 +5,7 @@ import { useEffect, useRef, useCallback } from "react";
 import { useState } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
 import {
     ImageIcon,
     FileUp,
@@ -14,7 +15,10 @@ import {
     ArrowUpIcon,
     Paperclip,
     PlusIcon,
+    XIcon,
+    CameraIcon,
 } from "lucide-react";
+import { selectImagesFromDevice, takePhotosFromCamera, fileToDataUrl } from "@/lib/image-upload";
 
 interface UseAutoResizeTextareaProps {
     minHeight: number;
@@ -72,8 +76,16 @@ function useAutoResizeTextarea({
     return { textareaRef, adjustHeight };
 }
 
+interface UploadedImage {
+    id: string;
+    dataUrl: string;
+    file: File;
+}
+
 export function VercelV0Chat() {
     const [value, setValue] = useState("");
+    const [uploadedImages, setUploadedImages] = useState<UploadedImage[]>([]);
+    const { toast } = useToast();
     const { textareaRef, adjustHeight } = useAutoResizeTextarea({
         minHeight: 60,
         maxHeight: 200,
@@ -82,11 +94,80 @@ export function VercelV0Chat() {
     const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
         if (e.key === "Enter" && !e.shiftKey) {
             e.preventDefault();
-            if (value.trim()) {
+            if (value.trim() || uploadedImages.length > 0) {
+                // Here you would handle the submission with both text and images
+                console.log("Submitting:", { text: value, images: uploadedImages });
                 setValue("");
+                setUploadedImages([]);
                 adjustHeight(true);
             }
         }
+    };
+
+    const handleAttachFiles = async () => {
+        try {
+            const files = await selectImagesFromDevice();
+            if (files.length === 0) return;
+            
+            const newImages = await Promise.all(
+                files.map(async (file) => {
+                    const dataUrl = await fileToDataUrl(file);
+                    return {
+                        id: Math.random().toString(36).substring(2, 11),
+                        dataUrl,
+                        file,
+                    };
+                })
+            );
+            
+            setUploadedImages((prev) => [...prev, ...newImages]);
+            toast({
+                title: "Images attached",
+                description: `${files.length} image${files.length > 1 ? 's' : ''} attached successfully.`,
+            });
+        } catch (error) {
+            console.error("Error attaching files:", error);
+            toast({
+                title: "Error attaching images",
+                description: "Failed to attach images. Please try again.",
+                variant: "destructive",
+            });
+        }
+    };
+
+    const handleTakePhotos = async () => {
+        try {
+            const photos = await takePhotosFromCamera();
+            if (photos.length === 0) return;
+            
+            const newImages = await Promise.all(
+                photos.map(async (file) => {
+                    const dataUrl = await fileToDataUrl(file);
+                    return {
+                        id: Math.random().toString(36).substring(2, 11),
+                        dataUrl,
+                        file,
+                    };
+                })
+            );
+            
+            setUploadedImages((prev) => [...prev, ...newImages]);
+            toast({
+                title: "Photos added",
+                description: `${photos.length} photo${photos.length > 1 ? 's' : ''} added successfully.`,
+            });
+        } catch (error) {
+            console.error("Error taking photos:", error);
+            toast({
+                title: "Camera error",
+                description: "Failed to access camera. Please check your permissions.",
+                variant: "destructive",
+            });
+        }
+    };
+
+    const removeImage = (id: string) => {
+        setUploadedImages((prev) => prev.filter((img) => img.id !== id));
     };
 
     return (
@@ -95,6 +176,29 @@ export function VercelV0Chat() {
             
             <div className="w-full">
                 <div className="relative bg-neutral-900 dark:bg-neutral-900 rounded-xl border border-neutral-800">
+                    {uploadedImages.length > 0 && (
+                        <div className="flex flex-wrap gap-2 p-3 border-b border-neutral-800">
+                            {uploadedImages.map((img) => (
+                                <div 
+                                    key={img.id} 
+                                    className="relative group w-16 h-16 rounded-md overflow-hidden"
+                                >
+                                    <img 
+                                        src={img.dataUrl} 
+                                        alt="Uploaded" 
+                                        className="w-full h-full object-cover"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => removeImage(img.id)}
+                                        className="absolute top-1 right-1 bg-black bg-opacity-60 p-1 rounded-full hidden group-hover:block"
+                                    >
+                                        <XIcon className="w-3 h-3 text-white" />
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    )}
                     <div className="overflow-y-auto">
                         <Textarea
                             ref={textareaRef}
@@ -126,6 +230,7 @@ export function VercelV0Chat() {
                         <div className="flex items-center gap-2">
                             <button
                                 type="button"
+                                onClick={handleAttachFiles}
                                 className="group p-2 hover:bg-neutral-800 rounded-lg transition-colors flex items-center gap-1"
                             >
                                 <Paperclip className="w-4 h-4 text-white" />
@@ -137,16 +242,17 @@ export function VercelV0Chat() {
                         <div className="flex items-center gap-2">
                             <button
                                 type="button"
+                                onClick={handleTakePhotos}
                                 className="px-2 py-1 rounded-lg text-sm text-zinc-400 transition-colors border border-dashed border-zinc-700 hover:border-zinc-600 hover:bg-zinc-800 flex items-center justify-between gap-1"
                             >
-                                <PlusIcon className="w-4 h-4" />
+                                <CameraIcon className="w-4 h-4" />
                                 Project
                             </button>
                             <button
                                 type="button"
                                 className={cn(
                                     "px-1.5 py-1.5 rounded-lg text-sm transition-colors border border-zinc-700 hover:border-zinc-600 hover:bg-zinc-800 flex items-center justify-between gap-1",
-                                    value.trim()
+                                    (value.trim() || uploadedImages.length > 0)
                                         ? "bg-white text-black"
                                         : "text-zinc-400"
                                 )}
@@ -154,7 +260,7 @@ export function VercelV0Chat() {
                                 <ArrowUpIcon
                                     className={cn(
                                         "w-4 h-4",
-                                        value.trim()
+                                        (value.trim() || uploadedImages.length > 0)
                                             ? "text-black"
                                             : "text-zinc-400"
                                     )}
