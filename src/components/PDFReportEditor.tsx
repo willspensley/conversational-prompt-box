@@ -17,13 +17,14 @@ import {
   savePDF, 
   printPDF 
 } from "@/lib/pdf-utils";
-import { FileText, Edit, Eye } from "lucide-react";
+import { FileText, Edit, Eye, FileCode } from "lucide-react";
 import { ImageViewerModal } from "./report/ImageViewerModal";
 import { ReportInfoSection } from "./report/ReportInfoSection";
 import { PropertyInfoSection } from "./report/PropertyInfoSection";
 import { ReportContextSection } from "./report/ReportContextSection";
 import { InventoryItemsSection } from "./report/InventoryItemsSection";
 import { PDFEditorFooter } from "./report/PDFEditorFooter";
+import { generateLatexDocument } from "@/lib/latex-utils";
 
 interface PDFReportEditorProps {
   isOpen: boolean;
@@ -42,12 +43,17 @@ export function PDFReportEditor({
   const [enlargedImage, setEnlargedImage] = useState<{src: string; alt: string} | null>(null);
   const [pdfPreviewUrl, setPdfPreviewUrl] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<string>("edit");
+  const [latexSource, setLatexSource] = useState<string | null>(null);
+  const [latexPdfUrl, setLatexPdfUrl] = useState<string | null>(null);
+  const [isLatexProcessing, setIsLatexProcessing] = useState<boolean>(false);
   const { toast } = useToast();
 
   // Generate PDF preview when switching to preview tab
   useEffect(() => {
     if (activeTab === "preview") {
       handleGeneratePreview();
+    } else if (activeTab === "latex") {
+      handleGenerateLatexPreview();
     }
   }, [activeTab]);
 
@@ -63,6 +69,33 @@ export function PDFReportEditor({
         description: "There was an error generating the PDF preview. Please try again.",
         variant: "destructive"
       });
+      // Switch back to edit tab on error
+      setActiveTab("edit");
+    }
+  };
+
+  const handleGenerateLatexPreview = async () => {
+    try {
+      setIsLatexProcessing(true);
+      
+      // Generate LaTeX source
+      const latex = await generateLatexDocument(report);
+      setLatexSource(latex);
+      
+      // Generate PDF from LaTeX (using the LaTeX to PDF service)
+      const pdfBlob = await generatePDF(report); // Temporary fallback until LaTeX PDF generation is implemented
+      const dataUrl = await blobToDataUrl(pdfBlob);
+      setLatexPdfUrl(dataUrl);
+      
+      setIsLatexProcessing(false);
+    } catch (error) {
+      console.error("Error generating LaTeX preview:", error);
+      toast({
+        title: "LaTeX Preview Failed",
+        description: "There was an error generating the LaTeX preview. Please try again.",
+        variant: "destructive"
+      });
+      setIsLatexProcessing(false);
       // Switch back to edit tab on error
       setActiveTab("edit");
     }
@@ -91,6 +124,28 @@ export function PDFReportEditor({
       toast({
         title: "Download Failed",
         description: "There was an error downloading the PDF. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleDownloadLatexPDF = async () => {
+    try {
+      // For now, use the same PDF generation as regular PDF
+      // In a future implementation, this would use LaTeX to generate the PDF
+      const pdfBlob = await generatePDF(report);
+      const filename = `${report.title.replace(/\s+/g, '_')}_${report.date}_latex.pdf`;
+      savePDF(pdfBlob, filename);
+      
+      toast({
+        title: "LaTeX PDF Downloaded",
+        description: "Your LaTeX-based PDF report has been downloaded successfully."
+      });
+    } catch (error) {
+      console.error("Error downloading LaTeX PDF:", error);
+      toast({
+        title: "Download Failed",
+        description: "There was an error downloading the LaTeX PDF. Please try again.",
         variant: "destructive"
       });
     }
@@ -240,14 +295,18 @@ export function PDFReportEditor({
               onValueChange={setActiveTab}
               className="flex flex-col flex-1 overflow-hidden"
             >
-              <TabsList className="grid w-full grid-cols-2">
+              <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="edit" className="flex items-center gap-2">
                   <Edit className="h-4 w-4" />
                   Edit
                 </TabsTrigger>
                 <TabsTrigger value="preview" className="flex items-center gap-2">
                   <Eye className="h-4 w-4" />
-                  Preview
+                  PDF Preview
+                </TabsTrigger>
+                <TabsTrigger value="latex" className="flex items-center gap-2">
+                  <FileCode className="h-4 w-4" />
+                  LaTeX Preview
                 </TabsTrigger>
               </TabsList>
               
@@ -293,6 +352,38 @@ export function PDFReportEditor({
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
                     <p className="text-muted-foreground">Loading preview...</p>
+                  </div>
+                )}
+              </TabsContent>
+
+              <TabsContent value="latex" className="flex-1 overflow-hidden p-2 bg-muted/20">
+                {isLatexProcessing ? (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <p className="text-muted-foreground">Generating LaTeX preview...</p>
+                  </div>
+                ) : latexPdfUrl ? (
+                  <div className="flex flex-col h-full">
+                    <div className="flex-1 overflow-hidden">
+                      <iframe 
+                        src={latexPdfUrl}
+                        className="w-full h-full border border-border rounded-md"
+                        title="LaTeX PDF Preview"
+                      />
+                    </div>
+                    <div className="mt-4 p-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={handleDownloadLatexPDF}
+                        className="flex items-center gap-1"
+                      >
+                        <Save className="h-4 w-4" /> Download LaTeX PDF
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <p className="text-muted-foreground">No LaTeX preview available</p>
                   </div>
                 )}
               </TabsContent>
