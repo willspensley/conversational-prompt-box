@@ -32,10 +32,10 @@ export const useReport = () => {
       const items: ReportItem[] = [];
       
       if (images.length > 0) {
-        const analysisResults = await analyzeImages(images.map(img => img.dataUrl), prompt);
+        const analysisResults = await analyzeImages(prompt, images);
         
         images.forEach((image, index) => {
-          const analysis = analysisResults[index] || "No analysis available";
+          const analysis = analysisResults[image.id] || "No analysis available";
           items.push({
             id: `item-${Date.now()}-${index}`,
             description: `Item ${index + 1}`,
@@ -60,7 +60,6 @@ export const useReport = () => {
       }
 
       const report: ReportData = {
-        id: `report-${Date.now()}`,
         title: "Property Inventory Report",
         date: new Date().toISOString(),
         property: {
@@ -97,7 +96,7 @@ export const useReport = () => {
     reportLibrary.addReport(report);
   };
 
-  const editReport = (report: ReportData) => {
+  const editReport = (report: any) => {
     setCurrentReport(report);
     setShowReportEditor(true);
   };
@@ -114,3 +113,4 @@ export const useReport = () => {
     ...reportLibrary
   };
 };
+

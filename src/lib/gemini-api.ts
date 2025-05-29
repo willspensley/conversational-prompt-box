@@ -59,6 +59,9 @@ export async function testGeminiAPI(): Promise<{ success: boolean; message: stri
   }
 }
 
+// Add the missing analyzeImages export - it should point to analyzeImagesWithGemini
+export const analyzeImages = analyzeImagesWithGemini;
+
 export async function analyzeImagesWithGemini(
   prompt: string,
   images: { id: string; dataUrl: string; file?: File }[]
@@ -220,3 +223,4 @@ interface ReportItem {
   aiAnalysis?: string;
   images: string[];
 }
+

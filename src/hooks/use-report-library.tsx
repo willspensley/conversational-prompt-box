@@ -3,8 +3,13 @@ import { useState, useEffect } from "react";
 import { ReportData, generatePDF, savePDF } from "@/lib/pdf-utils";
 import { useToast } from "@/hooks/use-toast";
 
+// Extended ReportData with id for library management
+interface LibraryReportData extends ReportData {
+  id: string;
+}
+
 export const useReportLibrary = () => {
-  const [reports, setReports] = useState<ReportData[]>([]);
+  const [reports, setReports] = useState<LibraryReportData[]>([]);
   const { toast } = useToast();
 
   // Load reports from localStorage on mount
@@ -26,14 +31,18 @@ export const useReportLibrary = () => {
   }, [reports]);
 
   const addReport = (report: ReportData) => {
-    setReports(prev => [report, ...prev]);
+    const reportWithId: LibraryReportData = {
+      ...report,
+      id: `report-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+    };
+    setReports(prev => [reportWithId, ...prev]);
     toast({
       title: "Report Saved",
       description: `"${report.title}" has been added to your library.`
     });
   };
 
-  const updateReport = (updatedReport: ReportData) => {
+  const updateReport = (updatedReport: LibraryReportData) => {
     setReports(prev => prev.map(report => 
       report.id === updatedReport.id ? updatedReport : report
     ));
@@ -51,7 +60,7 @@ export const useReportLibrary = () => {
     });
   };
 
-  const downloadReportPDF = async (report: ReportData) => {
+  const downloadReportPDF = async (report: LibraryReportData) => {
     try {
       const pdfBlob = await generatePDF(report);
       const filename = `${report.title.replace(/\s+/g, '_')}_${report.date}.pdf`;
@@ -79,3 +88,4 @@ export const useReportLibrary = () => {
     downloadReportPDF
   };
 };
+

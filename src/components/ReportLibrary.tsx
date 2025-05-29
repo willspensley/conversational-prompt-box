@@ -14,11 +14,16 @@ import {
 import { FileText, Search, Calendar, Download, Eye, Edit } from "lucide-react";
 import { ReportData } from "@/lib/pdf-utils";
 
+// Extended ReportData with id for library management
+interface LibraryReportData extends ReportData {
+  id: string;
+}
+
 interface ReportLibraryProps {
-  reports: ReportData[];
-  onSelectReport: (report: ReportData) => void;
-  onEditReport: (report: ReportData) => void;
-  onDownloadReport: (report: ReportData) => void;
+  reports: LibraryReportData[];
+  onSelectReport: (report: LibraryReportData) => void;
+  onEditReport: (report: LibraryReportData) => void;
+  onDownloadReport: (report: LibraryReportData) => void;
 }
 
 export function ReportLibrary({ 
@@ -28,7 +33,7 @@ export function ReportLibrary({
   onDownloadReport 
 }: ReportLibraryProps) {
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedReport, setSelectedReport] = useState<ReportData | null>(null);
+  const [selectedReport, setSelectedReport] = useState<LibraryReportData | null>(null);
 
   const filteredReports = reports.filter(report =>
     report.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -44,7 +49,7 @@ export function ReportLibrary({
     });
   };
 
-  const getReportStats = (report: ReportData) => {
+  const getReportStats = (report: LibraryReportData) => {
     const itemCount = report.items.length;
     const imageCount = report.items.reduce((acc, item) => acc + item.images.length, 0);
     return { itemCount, imageCount };
@@ -191,3 +196,4 @@ export function ReportLibrary({
     </div>
   );
 }
+
