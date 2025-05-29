@@ -1,155 +1,116 @@
 
 import { useState } from "react";
-import { ReportData, createDefaultReport, ImageResponsePair } from "@/lib/pdf-utils";
-import { analyzeImagesWithGemini, enhanceReportWithAIAnalysis, testGeminiAPI } from "@/lib/gemini-api";
+import { ReportData, ReportItem } from "@/lib/pdf-utils";
+import { analyzeImages } from "@/lib/gemini-api";
 import { useToast } from "@/hooks/use-toast";
+import { useReportLibrary } from "./use-report-library";
 
-export function useReport() {
+export const useReport = () => {
   const [currentReport, setCurrentReport] = useState<ReportData | null>(null);
-  const [savedReports, setSavedReports] = useState<ReportData[]>([]);
   const [showReportEditor, setShowReportEditor] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const { toast } = useToast();
+  const reportLibrary = useReportLibrary();
 
-  const generateReport = async (prompt: string, images: { id: string; dataUrl: string; file?: File }[]) => {
-    try {
-      setIsAnalyzing(true);
-      
-      // First create the basic report structure
-      const newReport = createDefaultReport(prompt, images);
-      
-      // Make sure imageResponsePairs is initialized
-      if (!newReport.property.imageResponsePairs) {
-        newReport.property.imageResponsePairs = [];
-      }
-      
-      console.log("Created base report structure with", images.length, "images");
-      
-      // Show a toast to indicate AI analysis is in progress
+  const generateReport = async (
+    prompt: string, 
+    images: { id: string; dataUrl: string; file: File }[]
+  ) => {
+    if (!prompt && images.length === 0) {
       toast({
-        title: "AI Analysis",
-        description: `Analyzing ${images.length} images with Gemini AI...`,
-      });
-
-      console.log("Starting Gemini analysis with prompt:", prompt);
-      console.log("Images for analysis:", images.map(img => img.id));
-      
-      // First test the API connectivity
-      const apiTest = await testGeminiAPI();
-      if (!apiTest.success) {
-        throw new Error(`API test failed: ${apiTest.message}`);
-      }
-      
-      // No images? Just create a basic report
-      if (images.length === 0) {
-        console.log("No images to analyze, creating basic report");
-        setCurrentReport(newReport);
-        setShowReportEditor(true);
-        return newReport;
-      }
-      
-      // Get AI analysis for each image
-      const aiAnalysisResults = await analyzeImagesWithGemini(prompt, images);
-      console.log("AI Analysis completed, results:", aiAnalysisResults);
-      
-      // Check if we got any results
-      if (Object.keys(aiAnalysisResults).length === 0 && images.length > 0) {
-        throw new Error("No analysis results returned from API");
-      }
-      
-      // Enhance the report with AI analysis
-      const enhancedItems = enhanceReportWithAIAnalysis(newReport.items, aiAnalysisResults);
-      console.log("Enhanced report items:", enhancedItems);
-      
-      // Also create image-response pairs for the property section
-      const imageResponsePairs: ImageResponsePair[] = [];
-      for (const imageId in aiAnalysisResults) {
-        // Find the matching image from original images array
-        const matchingImage = images.find(img => img.id === imageId);
-        if (matchingImage && aiAnalysisResults[imageId]) {
-          imageResponsePairs.push({
-            id: `pair-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
-            imageUrl: matchingImage.dataUrl,
-            response: aiAnalysisResults[imageId]
-          });
-        }
-      }
-      
-      // Update the report with enhanced items and image-response pairs
-      const finalReport = {
-        ...newReport,
-        items: enhancedItems,
-        property: {
-          ...newReport.property,
-          imageResponsePairs
-        }
-      };
-      
-      setCurrentReport(finalReport);
-      setShowReportEditor(true);
-      
-      toast({
-        title: "Analysis Complete",
-        description: `AI analysis of ${images.length} image${images.length !== 1 ? 's' : ''} has been added to your report.`,
-      });
-      
-      return finalReport;
-    } catch (error) {
-      console.error("Error generating AI report:", error);
-      
-      toast({
-        title: "AI Analysis Failed",
-        description: `Could not complete AI analysis: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        title: "No Input Provided",
+        description: "Please provide a prompt or upload images to generate a report.",
         variant: "destructive"
       });
+      return;
+    }
+
+    setIsAnalyzing(true);
+
+    try {
+      // Create inventory items from images with AI analysis
+      const items: ReportItem[] = [];
       
-      // Fallback to basic report without AI analysis
-      const basicReport = createDefaultReport(prompt, images);
-      // Make sure imageResponsePairs is initialized
-      if (!basicReport.property.imageResponsePairs) {
-        basicReport.property.imageResponsePairs = [];
+      if (images.length > 0) {
+        const analysisResults = await analyzeImages(images.map(img => img.dataUrl), prompt);
+        
+        images.forEach((image, index) => {
+          const analysis = analysisResults[index] || "No analysis available";
+          items.push({
+            id: `item-${Date.now()}-${index}`,
+            description: `Item ${index + 1}`,
+            condition: "Good" as const,
+            notes: "",
+            aiAnalysis: analysis,
+            images: [image.dataUrl]
+          });
+        });
       }
-      setCurrentReport(basicReport);
+
+      // If no images, create a sample item
+      if (items.length === 0) {
+        items.push({
+          id: `item-${Date.now()}`,
+          description: "Sample Item",
+          condition: "Good" as const,
+          notes: "Generated from prompt analysis",
+          aiAnalysis: "",
+          images: []
+        });
+      }
+
+      const report: ReportData = {
+        id: `report-${Date.now()}`,
+        title: "Property Inventory Report",
+        date: new Date().toISOString(),
+        property: {
+          address: "Property Address",
+          type: "Residential",
+          imageResponsePairs: []
+        },
+        items,
+        prompt: prompt || undefined
+      };
+
+      setCurrentReport(report);
       setShowReportEditor(true);
-      return basicReport;
+
+      toast({
+        title: "Report Generated",
+        description: `Created report with ${items.length} item${items.length !== 1 ? 's' : ''}.`
+      });
+
+    } catch (error) {
+      console.error("Error generating report:", error);
+      toast({
+        title: "Generation Failed",
+        description: "There was an error generating the report. Please try again.",
+        variant: "destructive"
+      });
     } finally {
       setIsAnalyzing(false);
     }
   };
 
   const saveReport = (report: ReportData) => {
-    // Ensure the report has imageResponsePairs property
-    if (!report.property.imageResponsePairs) {
-      report.property.imageResponsePairs = [];
-    }
-    
-    setSavedReports(prev => {
-      // Check if report already exists and update it
-      const existingIndex = prev.findIndex(r => 
-        r.title === report.title && r.date === report.date
-      );
-      
-      if (existingIndex >= 0) {
-        const updated = [...prev];
-        updated[existingIndex] = report;
-        return updated;
-      }
-      
-      // Otherwise add as new report
-      return [...prev, report];
-    });
-    
     setCurrentReport(report);
+    reportLibrary.addReport(report);
+  };
+
+  const editReport = (report: ReportData) => {
+    setCurrentReport(report);
+    setShowReportEditor(true);
   };
 
   return {
     currentReport,
-    setCurrentReport,
-    savedReports,
     generateReport,
     saveReport,
+    editReport,
     showReportEditor,
     setShowReportEditor,
-    isAnalyzing
+    isAnalyzing,
+    // Expose library functionality
+    ...reportLibrary
   };
-}
+};

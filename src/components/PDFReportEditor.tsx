@@ -7,6 +7,7 @@ import {
   DialogTitle,
   DialogFooter
 } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { 
@@ -17,7 +18,7 @@ import {
   savePDF, 
   printPDF 
 } from "@/lib/pdf-utils";
-import { FileText, Edit, Eye, FileCode } from "lucide-react";
+import { FileText, Edit, Eye, FileCode, Save } from "lucide-react";
 import { ImageViewerModal } from "./report/ImageViewerModal";
 import { ReportInfoSection } from "./report/ReportInfoSection";
 import { PropertyInfoSection } from "./report/PropertyInfoSection";
