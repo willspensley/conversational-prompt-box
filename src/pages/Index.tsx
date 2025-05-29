@@ -4,21 +4,29 @@ import { WordFadeIn } from "@/components/ui/word-fade-in";
 import { ReportDemo } from "@/components/ReportDemo";
 import { PDFReportEditor } from "@/components/PDFReportEditor";
 import { ReportLibrary } from "@/components/ReportLibrary";
+import { TemplateSelector } from "@/components/TemplateSelector";
 import { Button } from "@/components/ui/button";
 import { useReport } from "@/hooks/use-report";
+import { useAutoSave } from "@/hooks/use-auto-save";
 import { useState } from "react";
-import { FileText } from "lucide-react";
+import { FileText, Plus, Clock } from "lucide-react";
 
 const Index = () => {
   const {
     currentReport,
     generateReport,
+    generateReportFromTemplate,
     saveReport,
+    saveDraft,
     editReport,
+    startNewReport,
     showReportEditor,
     setShowReportEditor,
+    showTemplateSelector,
+    setShowTemplateSelector,
     isAnalyzing,
     reports,
+    drafts,
     downloadReportPDF
   } = useReport();
   
@@ -30,6 +38,14 @@ const Index = () => {
     images: [] as { id: string; dataUrl: string; file: File }[]
   });
 
+  // Auto-save current report
+  useAutoSave({
+    data: currentReport,
+    onSave: saveDraft,
+    enabled: showReportEditor && !!currentReport,
+    delay: 3000 // Save every 3 seconds
+  });
+
   // Handler for receiving data from the chat component
   const handleChatUpdate = (prompt: string, images: { id: string; dataUrl: string; file: File }[]) => {
     setChatState({ prompt, images });
@@ -37,10 +53,6 @@ const Index = () => {
 
   // Handler for generating a report from the current chat state
   const handleGenerateReport = async () => {
-    if (!chatState.prompt && chatState.images.length === 0) {
-      return; // Nothing to generate
-    }
-    
     await generateReport(chatState.prompt, chatState.images);
   };
 
@@ -81,17 +93,38 @@ const Index = () => {
           className="text-3xl md:text-5xl text-center font-bold text-primary mb-2"
         />
         
-        {/* Report Library Button */}
-        {reports.length > 0 && (
+        {/* Action Buttons */}
+        <div className="flex flex-wrap items-center justify-center gap-3">
           <Button 
-            variant="outline" 
-            onClick={() => setShowLibrary(true)}
+            onClick={startNewReport}
             className="flex items-center gap-2"
           >
-            <FileText className="h-4 w-4" />
-            My Reports ({reports.length})
+            <Plus className="h-4 w-4" />
+            New Report
           </Button>
-        )}
+          
+          {reports.length > 0 && (
+            <Button 
+              variant="outline" 
+              onClick={() => setShowLibrary(true)}
+              className="flex items-center gap-2"
+            >
+              <FileText className="h-4 w-4" />
+              My Reports ({reports.length})
+            </Button>
+          )}
+          
+          {drafts.length > 0 && (
+            <Button 
+              variant="outline" 
+              onClick={() => setShowLibrary(true)}
+              className="flex items-center gap-2"
+            >
+              <Clock className="h-4 w-4" />
+              Drafts ({drafts.length})
+            </Button>
+          )}
+        </div>
         
         <div className="w-full flex justify-center">
           <VercelV0Chat 
@@ -103,6 +136,13 @@ const Index = () => {
       </div>
       
       <ReportDemo />
+      
+      {/* Template Selector */}
+      <TemplateSelector
+        isOpen={showTemplateSelector}
+        onClose={() => setShowTemplateSelector(false)}
+        onSelectTemplate={generateReportFromTemplate}
+      />
       
       {/* PDF Report Editor */}
       {currentReport && (
