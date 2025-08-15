@@ -19,8 +19,10 @@ export const useReport = () => {
 
   const generateReportFromTemplate = (template: ReportTemplate) => {
     const report: ReportData = {
+      id: `report-${Date.now()}`,
       title: template.fields.title,
       date: new Date().toISOString(),
+      prompt: "",
       property: {
         address: "Property Address",
         type: template.fields.propertyType,
@@ -93,6 +95,7 @@ export const useReport = () => {
       }
 
       const report: ReportData = {
+        id: `report-${Date.now()}`,
         title: "Property Inventory Report",
         date: new Date().toISOString(),
         property: {

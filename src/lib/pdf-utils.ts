@@ -25,6 +25,7 @@ export interface ReportItem {
 }
 
 export interface ReportData {
+  id: string;
   title: string;
   date: string;
   property: {
@@ -51,6 +52,7 @@ export const createDefaultReport = (
   }));
 
   return {
+    id: `report-${Date.now()}`,
     title: "Property Inventory Report",
     date: new Date().toISOString().split("T")[0],
     property: {
