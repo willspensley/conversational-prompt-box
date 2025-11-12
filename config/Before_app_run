@@ -1,0 +1,7 @@
+move back to root when running 
+Keep these at root:
+package.json, package-lock.json, bun.lockb (package managers expect them)
+README.md (GitHub display)
+.gitignore (repo-wide rules)
+vite.config.ts (convention)
+index.html (Vite entry point)
