@@ -1,6 +1,6 @@
 ## Universal AI PDF Generator
 
-This prototype was the prelude to the Verify Vision venture which gained market traction within the London property market (see project within my repos)
+This prototype was the prelude to the Verify Vision venture which gained market traction within the London property market.
 
 The reason I built this prior to Verify Vision was because almost immediately as I was building Verify Vision I realised that building out the full property management functionality was a larger task than was necessary for an MVP. The need for multiple pages and buttons quickly emerged, as producing a structured report for a property and its rooms would involve separate UI pages for entering property details, selecting rooms, and capturing photos for each section. The question surfaced of how streamlined the UI could be for users. A design similar to an AI chat interface appeared feasible, using a simple prompt box and an attachment upload button. This approach shaped the prototype developed seen here.
 
